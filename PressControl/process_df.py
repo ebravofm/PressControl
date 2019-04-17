@@ -57,11 +57,15 @@ def get_chunk_from_db(n=150,
                     processed_table=read_config()['processed_table'], 
                     delete=False, 
                     engine=mysql_engine(), 
-                    con=None):
+                    con=None,
+                    rand=False):
     if con == None:
         con = engine.connect()
+    order = ''
+    if rand = True:
+        order = 'order by rand()'
     
-    query = 'select original_link from '+queue_table+' limit '+ str(n)
+    query = f'select original_link from {queue_table} {order} limit {str(n)}'
     
     try:
         # Reading rows
