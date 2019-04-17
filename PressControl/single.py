@@ -3,7 +3,6 @@ from PressControl.process_df import get_full_df
 import pandas as pd
 from PressControl.utils import tprint
 import time
-import objgraph
 
 
 def work(result_table=read_config()['result_table'], df=pd.DataFrame(),
