@@ -4,3 +4,4 @@ beautifulsoup4
 news-please
 google
 pyquery
+mysql-connector
