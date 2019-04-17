@@ -3,3 +3,4 @@ sqlalchemy
 beautifulsoup4
 news-please
 google
+pyquery
