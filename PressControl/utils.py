@@ -2,6 +2,7 @@ from sqlalchemy import create_engine
 import datetime
 import pandas as pd
 import os
+import shutil
 
 
 def mysql_engine():
@@ -106,3 +107,23 @@ def len_tables(tables=None, engine=None, con=None):
         con.close()
         engine.dispose()
 
+
+def read_cookies():
+    cookies = {}
+    path = f"{os.environ['HOME']}/PressControl/cookies/"
+    if os.path.exists(path):
+        
+        cookies_path = [path+cookie for cookie in os.listdir(path) if 'pkl' in cookie]
+        for cookie in cookies_path:
+            cookies[cookie.split('/')[-1].split('.')[0]] = pd.read_pickle(cookie)
+            
+    return cookies
+ 
+    
+def add_cookies(file_path=None):   
+    path = f"{os.environ['HOME']}/PressControl/cookies/"
+    if not os.path.exists(path):
+        os.makedirs(path)
+    if file_path == None:
+        file_path = input('Cookie file path: ')
+    shutil.copyfile(file_path, path+file_path.split('/')[-1])

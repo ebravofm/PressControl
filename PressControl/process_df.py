@@ -7,14 +7,23 @@ import pickle
 from contextlib import closing
 
 
-
 def get_full_df(n_pools=15, n=150, 
-                queue_table=read_config()['queue_table'],
-                processed_table=read_config()['processed_table'], 
+                queue_table=None,
+                processed_table=None, 
                 delete=False,
-                engine=mysql_engine(), 
+                engine=None, 
                 con=None,
                 rand=False):
+    
+    if engine == None:
+        engine = mysql_engine()
+        
+    config = read_config()
+    if queue_table == None:
+        queue_table = config['queue_table']
+    if processed_table == None:
+        processed_table = config['processed_table']
+
     
     chunk = get_chunk_from_db(n, queue_table, processed_table, delete, engine, con, rand)
     
@@ -57,12 +66,19 @@ def process_row(row):
 
 
 def get_chunk_from_db(n=150, 
-                    queue_table=read_config()['queue_table'], 
-                    processed_table=read_config()['processed_table'], 
+                    queue_table=None, 
+                    processed_table=None, 
                     delete=False, 
                     engine=mysql_engine(), 
                     con=None,
                     rand=False):
+    
+    config = read_config()
+    if queue_table == None:
+        queue_table = config['queue_table']
+    if processed_table == None:
+        processed_table = config['processed_table']
+
     if con == None:
         con = engine.connect()
         

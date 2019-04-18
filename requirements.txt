@@ -4,4 +4,4 @@ beautifulsoup4
 newspaper3k
 google
 pyquery
-mysql-connector
+mysql-connector-python

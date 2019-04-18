@@ -4,16 +4,24 @@ import os
 import inspect
 from functools import partial
 from PressControl.db_utils import get_press_rows
-from PressControl.utils import read_config
+from PressControl.utils import read_config, add_cookies
 from PressControl.scrape import tweet2url, links2db, shuffle_queue
+from PressControl.full import program
 import textwrap
 
+
+def cli(work=False):
+    if work == True:
+        program(delete=True)
+    else:
+        Home()
+    
 
 # =======================
 #       MAIN MENU
 # =======================
 
-def main():
+def Home():
     title='Press Control'
     options = [
         ['Get Articles', get_article],
@@ -77,7 +85,7 @@ def articles(n=None, engine=None, con=None):
             print()
         
             input('(ENTER)')
-    main()
+    Home()
     
     
 # =======================
@@ -91,6 +99,7 @@ def scrape_new_links():
         ['Scrape SiteMap', TBA],
         ['Shuffle Queue', shuffle]]    
     UI(title=title, options=options, home=False)
+
     
 def scrape_twitter():
     username = input('\nUsername: ')
@@ -123,12 +132,13 @@ def scrape_twitter():
                      years=years, since=since, until=until)
     
     links2db(urls)
-    main()
+    Home()
 
+    
 def shuffle():
     suffle_queue(engine=None)
     input('(ENTER)')
-    main()
+    Home()
     
 
 # =======================
@@ -138,8 +148,15 @@ def shuffle():
 def configuration():
     title='Configuration'
     options = [
-        ['Allowed domains', TBA]]    
+        ['Allowed domains', TBA],
+        ['Add Cookies', add_cookie]]    
     UI(title=title, options=options, home=True)
+    
+
+def add_cookie():
+    add_cookies()
+    Home()
+    
     
 # Pending
 def allowed_domains():
@@ -189,7 +206,7 @@ def UI(title='', description='', options=[], home=False):
         print('[0] Exit\n')
 
     if home == False:
-        d_options['0'] = ['Home', main]
+        d_options['0'] = ['Home', home]
         print('[0] Home\n')
 
         

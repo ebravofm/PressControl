@@ -1,7 +1,7 @@
 import requests
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup as bs
-from PressControl.utils import read_config, tprint
+from PressControl.utils import read_config, tprint, read_cookies
 import pandas as pd
 import random
 import urllib
@@ -43,7 +43,7 @@ def get_direct_link(twitter_link):
     Extract direct link from tweet.
     '''
     
-    if 'twitter' in twitter_link:
+    if 'https://twitter.com' in twitter_link:
         indirect_links = []
 
         try:
@@ -193,7 +193,8 @@ def process_outer(link):
 
 
 def process_Df(page):
-    page = requests.get(page.url, cookies=pd.read_pickle('cookies/df.pkl'))
+    cookies = read_cookies()
+    page = requests.get(page.url, cookies=cookies['df'])
     d = process_inner(page)
     soup = bs(page.content, 'lxml')
     try:

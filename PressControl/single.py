@@ -5,11 +5,25 @@ from PressControl.utils import tprint
 import time
 
 
-def work(result_table=read_config()['result_table'], df=pd.DataFrame(),
-         debug=False,n_pools=15, n=150, queue_table=read_config()['queue_table'],
-         processed_table=read_config()['processed_table'],
-         error_table=read_config()['error_table'],
+def work(result_table=None, df=None,
+         debug=False,n_pools=15, n=150, queue_table=None,
+         processed_table=None,
+         error_table=None,
          delete=False,engine=None, con=None, rand=False):
+    
+    if df==None:
+        df = pd.DataFrame()
+    
+    config = read_config()
+    if result_table == None:
+        result_table = config['result_table']
+    if queue_table == None:
+        queue_table = config['queue_table']
+    if processed_table == None:
+        processed_table = config['processed_table']
+    if error_table == None:
+        error_table = config['error_table']
+
     
     s = time.time()
     
@@ -49,13 +63,26 @@ def work(result_table=read_config()['result_table'], df=pd.DataFrame(),
 
 class TempTable:
     
-    def __init__(self, result_table=read_config()['result_table'],
-                 df=pd.DataFrame(), debug=False,n_pools=15, n=150,
-                 queue_table=read_config()['queue_table'],
-                 processed_table=read_config()['processed_table'],
-                 error_table=read_config()['error_table'],
+    def __init__(self, result_table=None,
+                 df=None, debug=False,n_pools=15, n=150,
+                 queue_table=None,
+                 processed_table=None,
+                 error_table=None,
                  delete=False, engine=None, con=None, rand=False):
         
+        if df ==None:
+            df = pd.DataFrame()
+        
+        config = read_config()
+        if result_table == None:
+            result_table = config['result_table']
+        if queue_table == None:
+            queue_table = config['queue_table']
+        if processed_table == None:
+            processed_table = config['processed_table']
+        if error_table == None:
+            error_table = config['error_table']
+
         self.result_table = result_table
         self.queue_table = queue_table
         self.processed_table = processed_table
