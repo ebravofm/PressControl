@@ -8,11 +8,15 @@ from contextlib import closing
 
 
 
-def get_full_df(n_pools=15, n=150, queue_table=read_config()['queue_table'],
-                processed_table=read_config()['processed_table'], delete=False,
-                engine=mysql_engine(), con=None):
+def get_full_df(n_pools=15, n=150, 
+                queue_table=read_config()['queue_table'],
+                processed_table=read_config()['processed_table'], 
+                delete=False,
+                engine=mysql_engine(), 
+                con=None,
+                rand=False):
     
-    chunk = get_chunk_from_db(n, queue_table, processed_table, delete, engine, con)
+    chunk = get_chunk_from_db(n, queue_table, processed_table, delete, engine, con, rand)
     
     df = populate_df(chunk, n_pools)
     

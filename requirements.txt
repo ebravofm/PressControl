@@ -1,7 +1,7 @@
 pandas
 sqlalchemy
 beautifulsoup4
-news-please
+newspaper3k
 google
 pyquery
 mysql-connector

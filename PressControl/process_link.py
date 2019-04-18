@@ -5,7 +5,7 @@ from PressControl.utils import read_config, tprint
 import pandas as pd
 import random
 import urllib
-from newspaper import Article
+import newspaper
 from urllib.parse import urlparse
 import datetime
 from googlesearch import search

@@ -9,7 +9,7 @@ def work(result_table=read_config()['result_table'], df=pd.DataFrame(),
          debug=False,n_pools=15, n=150, queue_table=read_config()['queue_table'],
          processed_table=read_config()['processed_table'],
          error_table=read_config()['error_table'],
-         delete=False,engine=None,con=None):
+         delete=False,engine=None, con=None, rand=False):
     
     s = time.time()
     
@@ -19,7 +19,7 @@ def work(result_table=read_config()['result_table'], df=pd.DataFrame(),
                    n_pools=n_pools, n=n, queue_table=queue_table,
                    processed_table=processed_table, 
                    error_table=error_table, delete=delete, 
-                   engine=engine, con=con)
+                   engine=engine, con=con, rand=rand)
                
     if not tt.df.empty:
         
@@ -54,7 +54,7 @@ class TempTable:
                  queue_table=read_config()['queue_table'],
                  processed_table=read_config()['processed_table'],
                  error_table=read_config()['error_table'],
-                 delete=False, engine=None, con=None):
+                 delete=False, engine=None, con=None, rand=False):
         
         self.result_table = result_table
         self.queue_table = queue_table
@@ -75,7 +75,7 @@ class TempTable:
             self.con = self.engine.connect()
         
         if self.df.empty:
-            self.df = get_full_df(n_pools, n, queue_table, processed_table, delete, engine=self.engine, con=self.con)
+            self.df = get_full_df(n_pools, n, queue_table, processed_table, delete, engine=self.engine, con=self.con, rand=rand)
 
         self.divide_df()
 
