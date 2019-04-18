@@ -5,7 +5,7 @@ from PressControl.utils import read_config, tprint
 import pandas as pd
 import random
 import urllib
-from newsplease import NewsPlease
+from newspaper import Article
 from urllib.parse import urlparse
 import datetime
 from googlesearch import search
@@ -80,16 +80,18 @@ def get_direct_link(twitter_link):
     
 
 def process_inner(requests_page):
-    art = NewsPlease.from_html(requests_page.content)
+    art = newspaper.Article('')
+    art.set_html(requests_page.content)
+
     d = {}
     d['titulo'] = art.title
-    d['bajada'] = art.description
+    d['bajada'] = art.meta_description
     d['contenido'] = art.text
     d['autor'] = ', '.join(art.authors)
-    d['fecha'] = art.date_publish
+    d['fecha'] = art.publish_date
     d['link'] = requests_page.url
     d['fuente'] = urlparse(requests_page.url).netloc.split('.')[-2].capitalize()
-    d['imagen'] = art.image_url
+    d['imagen'] = art.top_image
     d['error'] = 0
     try:
         d['ano'] = art.date_publish.year
