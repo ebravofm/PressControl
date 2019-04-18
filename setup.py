@@ -16,7 +16,7 @@ setup(name = 'PressControl',
     include_package_data = True,
     zip_safe = True,
     entry_points = {'console_scripts': ['PressControl = PressControl.__main__:main',],},
-    data_files = [('{}/.config/PressControl/'.format(os.environ['HOME']), ['PressControl/config.ini'])],
+    data_files = [(os.environ['HOME']+'/.config/PressControl/', ['PressControl/config.yaml'])],
     install_requires = requirements
     
 )

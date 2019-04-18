@@ -3,8 +3,15 @@ from datetime import datetime, timedelta
 from PressControl.utils import tprint, mysql_engine, read_config
 import pandas as pd
 
-def tweet2url(tweet_list=None, username=None, days=0, months=0, years=0, 
-              monthly=False, yearly=False, since='', until=''):
+def tweet2url(tweet_list=None, 
+              username=None, 
+              days=0, 
+              months=0, 
+              years=0, 
+              monthly=False, 
+              yearly=False, 
+              since='',
+              until=''):
     
     if tweet_list == None:
         tweet_list = scrape_tweets(username=username, days=days, 
@@ -65,12 +72,16 @@ def scrape_tweets(username, days=0, months=0, years=0, monthly=False,
     return tweets
 
 
-def links2db(urls, con=None):
-    c = read_config()
+def links2db(urls, con=None, config=None):
+    if config == None:
+        config = read_config()
+    backup = config['TABLES']['BACKUP']
+    queue = config['TABLES']['QUEUE']
+
     if con == None:
         engine = mysql_engine()
         con = engine.connect()
-        
+
     engine.execute('drop table if exists erase')
         
     df = pd.DataFrame(urls, columns=['original_link'])
@@ -88,31 +99,37 @@ def links2db(urls, con=None):
         
         df.to_sql('erase', con=con, index=False, if_exists='append')
 
-        '''engine.execute('insert ignore into '+c['backup_table']+' select * from erase')
-        engine.execute('insert ignore into '+c['queue_table']+' select * from erase')'''
+        '''engine.execute(f'insert ignore into {backup} select original_link from erase')
+        engine.execute(f'insert ignore into {queue} select original_link from erase')'''
 
-        engine.execute('insert ignore into test select * from erase')
+        engine.execute('insert ignore into test select original_link from erase')
 
         engine.execute('drop table if exists erase')
         
         print('Success.')
 
     
-def shuffle_queue(engine=None):
-    x = input('Shuffle queue? Recomended to prevent IP being banned (y/n)')
+def shuffle_queue(engine=None, config=None):
+    if config == None:
+        config = read_config()
+    queue = config['TABLES']['QUEUE']
+        
+    print()
+    x = input('Shuffle queue? Recomended to prevent IP being banned (y/n): ')
+    print()
+    
     if x == 'y':
-        c = read_config()
 
         if engine == None:
             engine = mysql_engine()
 
-        temp = c['queue_table']+'_backup_'+datetime.now().strftime('%d_%m')
+        temp = f'{queue}_backup_'+datetime.now().strftime('%d_%m')
 
         tprint('[·] Shuffling queue table (can take up to 5 mins).')
 
-        engine.execute('create table '+temp+' like '+c['queue_table'])
-        engine.execute('insert into '+temp+' select * from queue order by rand()')
-        
-        engine.execute('drop table '+c['queue_table'])
-        engine.execute('rename table '+temp+' to '+c['queue_table'])
+        engine.execute(f'create table {temp} like {queue}')
+        engine.execute(f'insert into {temp} (original_link) select original_link from queue order by rand()')
+                
+        engine.execute(f'drop table {queue}')
+        engine.execute(f'rename table {temp} to {queue}')
         tprint('[+] Done shuffling.')

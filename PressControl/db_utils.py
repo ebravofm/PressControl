@@ -2,28 +2,36 @@ from PressControl.utils import mysql_engine, read_config
 import pandas as pd
 import random
 
-def init_mysql_db(engine=None):
+def init_mysql_db(engine=None, config=None):
     close = False
     
     if engine == None:
         engine=mysql_engine()
         close = True
-    
-    
-    c = read_config()
+    if config == None:
+        config = read_config()
+        
+    queue = config['TABLES']['QUEUE']
+    processed = config['TABLES']['PROCESSED']
+    result = config['TABLES']['RESULT']
+    error = config['TABLES']['ERROR']
+    backup = config['TABLES']['BACKUP']
 
-    processed_query = '''
-    CREATE TABLE IF NOT EXISTS '''+c['processed_table']+''' (
+    processed_query = f'''
+    CREATE TABLE IF NOT EXISTS {processed} (
         original_link VARCHAR(300)
     ) CHARSET=utf8mb4; '''
 
-    queue_query = '''
-    CREATE TABLE IF NOT EXISTS '''+c['queue_table']+''' (
-        original_link VARCHAR(300)
+    queue_query = f'''
+    CREATE TABLE IF NOT EXISTS {queue} (
+        id INT(11) NOT NULL Auto_increment,
+        original_link VARCHAR(300),
+
+        PRIMARY KEY (id)
     ) CHARSET=utf8mb4; '''
 
-    result_query = '''
-    CREATE TABLE IF NOT EXISTS '''+c['result_table']+''' (
+    result_query = f'''
+    CREATE TABLE IF NOT EXISTS {result} (
         id INT(11) NOT NULL Auto_increment,
         titulo VARCHAR(255),
         bajada TEXT,
@@ -41,9 +49,9 @@ def init_mysql_db(engine=None):
         PRIMARY KEY (id)
     ) CHARSET=utf8mb4 Auto_increment=1; '''
 
-    error_query = '''
-    CREATE TABLE IF NOT EXISTS '''+c['error_table']+''' (
-        original_link VARCHAR(255),
+    error_query = f'''
+    CREATE TABLE IF NOT EXISTS {error} (
+        original_link VARCHAR(300),
         info VARCHAR(300),
         borrar tinyint(1) DEFAULT 0
     ) CHARSET=utf8mb4; '''
@@ -55,13 +63,13 @@ def init_mysql_db(engine=None):
     
     # No duplicates
     
-    #result_no_dup = 'alter table '+c['result_table']+' add constraint no_duplicates unique key(link)'
-    queue_no_dup = 'alter table '+c['queue_table']+' add constraint no_duplicates unique key(original_link)'
-    backup_no_dup = 'alter table '+c['backup_table']+' add constraint no_duplicates unique key(original_link)'
+    result_no_dup = f'alter table {result} add constraint no_duplicates unique key(link)'
+    queue_no_dup = f"alter table {queue} add constraint no_duplicates unique key(original_link)"
+    backup_no_dup = f"alter table {backup} add constraint no_duplicates unique key(original_link)"
     
-    '''try:
+    try:
         engine.execute(result_no_dup)
-    except: pass'''    
+    except: pass    
     try:
         engine.execute(queue_no_dup)
     except: pass    
@@ -73,48 +81,50 @@ def init_mysql_db(engine=None):
         engine.dispose()
     
     
-def list_discarded(con=None):
+def list_discarded(con=None, config=None):
     close = False
-    c = read_config()
-    
+    if config == None:
+        config = read_config()
     if con == None:
         engine = mysql_engine()
         con = engine.connect()
         close = True
-        
-        
 
-    processed = []
-    result = []
-    error = []
+    queue = config['TABLES']['QUEUE']
+    processed = config['TABLES']['PROCESSED']
+    result = config['TABLES']['RESULT']
+    error = config['TABLES']['ERROR']
+    backup = config['TABLES']['BACKUP']
+
+    processed_list = []
+    result_list = []
+    error_list = []
     
-    ps = pd.read_sql('select original_link from '+c['processed_table'], con=con, chunksize=50000)
-    rs = pd.read_sql('select original_link from '+c['result_table'], con=con, chunksize=50000)
-    es = pd.read_sql('select original_link from '+c['error_table'], con=con, chunksize=50000)
-    
+    ps = pd.read_sql(f"select original_link from {processed}", con=con, chunksize=50000)
     for p in ps:
-        processed += p.original_link.tolist()
+        processed_list += p.original_link.tolist()
+        
+    rs = pd.read_sql(f"select original_link from {result}", con=con, chunksize=50000)
     for r in rs:
-        result += r.original_link.tolist()
+        result_list += r.original_link.tolist()
+        
+    es = pd.read_sql(f"select original_link from {error}", con=con, chunksize=50000)
     for e in es:
-        error += e.original_link.tolist()
+        error_list += e.original_link.tolist()
         
-    discarded = set(processed) - set(result) - set(error)
-        
-        
+    discarded = set(processed_list) - set(result_list) - set(error_list)
         
     if close == True:
         con.close()
         engine.dispose()
         
-    
     return list(discarded)
 
 
 def recover_discarded(con=None, table=None):
     
     if table == None:
-        table = read_config()['error_table']
+        table = read_config()['TABLES']['ERROR']
         
     close = False
     
@@ -126,7 +136,7 @@ def recover_discarded(con=None, table=None):
         
     d = list_discarded(con=con)
     df = pd.DataFrame({'original_link': d, 
-                       'info': ['Discarded by pandas.']*len(d), 
+                       'info': ['Discarded by insert ignore.']*len(d), 
                        'borrar': [0]*len(d)})
     df.to_sql(table,
               con = con,
@@ -141,12 +151,20 @@ def recover_discarded(con=None, table=None):
         
 def get_press_rows(n=1, engine=None, con=None, 
                    result_table=None, 
-                   ids=None, source=None):
+                   ids=None, source=None, config=None):
     
     if result_table==None:
-        result_table = read_config()['result_table']
+        result_table = config['TABLES']['RESULT']
     
-    c = read_config()
+    if config == None:
+        config = read_config()
+        
+    queue = config['TABLES']['QUEUE']
+    processed = config['TABLES']['PROCESSED']
+    result = config['TABLES']['RESULT']
+    error = config['TABLES']['ERROR']
+    backup = config['TABLES']['BACKUP']
+
     close_engine = False
     close_con = False
     
@@ -161,10 +179,10 @@ def get_press_rows(n=1, engine=None, con=None,
         
         
     if source == None and ids == None:
-        n_rows = engine.execute('SELECT Auto_increment FROM information_schema.tables WHERE table_name = "'+c['result_table']+'";').scalar()
+        n_rows = engine.execute(f'SELECT Auto_increment FROM information_schema.tables WHERE table_name = "{result}";').scalar()
         ids = random.sample(range(1, n_rows), n)
 
-    query = 'select * from '+c['result_table']+' where '
+    query = f'select * from {result} where '
     for id in ids:
         query += 'id='+str(id)+' or '
     query = query.strip(' or ')
@@ -180,5 +198,3 @@ def get_press_rows(n=1, engine=None, con=None,
 
     
     return rows
-        
-    

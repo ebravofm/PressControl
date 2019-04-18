@@ -7,27 +7,34 @@ import pickle
 from contextlib import closing
 
 
-def get_full_df(n_pools=15, n=150, 
+def get_full_df(n_pools=15,
+                n=150,
                 queue_table=None,
-                processed_table=None, 
+                processed_table=None,
                 delete=False,
-                engine=None, 
+                engine=None,
                 con=None,
-                rand=False):
+                rand=False,
+                config=None):
     
     if engine == None:
         engine = mysql_engine()
-        
-    config = read_config()
+    if config == None:
+        config = read_config()
     if queue_table == None:
-        queue_table = config['queue_table']
+        queue_table = config['DATABASE']['QUEUE']
     if processed_table == None:
-        processed_table = config['processed_table']
+        processed_table = config['DATABASE']['PROCESSED']
 
+    chunk = get_chunk_from_db(n=n,
+                              queue_table=queue_table,
+                              processed_table=processed_table,
+                              delete=delete,
+                              engine=engine,
+                              con=con,
+                              rand=rand)
     
-    chunk = get_chunk_from_db(n, queue_table, processed_table, delete, engine, con, rand)
-    
-    df = populate_df(chunk, n_pools)
+    df = populate_df(chunk, n_pools=n_pools)
     
     return df
 
@@ -71,18 +78,20 @@ def get_chunk_from_db(n=150,
                     delete=False, 
                     engine=mysql_engine(), 
                     con=None,
-                    rand=False):
+                    rand=False,
+                    config=None):
     
-    config = read_config()
+    if config == None:
+        config = read_config()
     if queue_table == None:
-        queue_table = config['queue_table']
+        queue_table = config['DATABASE']['QUEUE']
     if processed_table == None:
-        processed_table = config['processed_table']
+        processed_table = config['DATABASE']['PROCESSED']
 
     if con == None:
         con = engine.connect()
         
-    order = ''
+    order = 'order by id'
     if rand == True:
         order = 'order by rand()'
     
@@ -95,7 +104,7 @@ def get_chunk_from_db(n=150,
         # Backup and delete rows
         if delete == True:
             df.to_sql(processed_table, con = con, if_exists='append', index=False)
-            engine.execute('delete from '+queue_table+' limit '+str(n))
+            engine.execute(f'delete from {queue_table} limit {str(n)}')
         
 
     except Exception as exc:
@@ -103,5 +112,3 @@ def get_chunk_from_db(n=150,
         df = None
         
     return df
-
-

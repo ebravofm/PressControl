@@ -5,35 +5,50 @@ from PressControl.utils import tprint
 import time
 
 
-def work(result_table=None, df=None,
-         debug=False,n_pools=15, n=150, queue_table=None,
+def work(result_table=None, 
+         df=None,
+         debug=True,
+         n_pools=15, 
+         n=150, 
+         queue_table=None,
          processed_table=None,
          error_table=None,
-         delete=False,engine=None, con=None, rand=False):
+         delete=False,
+         engine=None, 
+         con=None, 
+         rand=False,
+         config=None):
     
-    if df==None:
+    if df is None:
         df = pd.DataFrame()
-    
-    config = read_config()
+        
+    if config == None:
+        config = read_config()
     if result_table == None:
-        result_table = config['result_table']
+        result_table = config['DATABASE']['RESULT']
     if queue_table == None:
-        queue_table = config['queue_table']
+        queue_table = config['DATABASE']['QUEUE']
     if processed_table == None:
-        processed_table = config['processed_table']
+        processed_table = config['DATABASE']['PROCESSED']
     if error_table == None:
-        error_table = config['error_table']
+        error_table = config['DATABASE']['ERROR']
 
-    
     s = time.time()
     
     tprint('[·] Downloading and processing data from table...')
     
-    tt = TempTable(result_table=result_table, df=df, debug=debug,
-                   n_pools=n_pools, n=n, queue_table=queue_table,
-                   processed_table=processed_table, 
-                   error_table=error_table, delete=delete, 
-                   engine=engine, con=con, rand=rand)
+    tt = TempTable(result_table=result_table,
+                   df=df,
+                   debug=debug,
+                   n_pools=n_pools,
+                   n=n,
+                   queue_table=queue_table,
+                   processed_table=processed_table,
+                   error_table=error_table,
+                   delete=delete,
+                   engine=engine,
+                   con=con,
+                   rand=rand)
                
     if not tt.df.empty:
         
@@ -41,7 +56,6 @@ def work(result_table=None, df=None,
         tprint('[+] Done ({} seconds)'.format(round(t1-s,2)))
         tprint('[·] Inserting into main table...')
 
-        tt.create()
         tt.update()
 
         f = time.time()
@@ -63,25 +77,33 @@ def work(result_table=None, df=None,
 
 class TempTable:
     
-    def __init__(self, result_table=None,
-                 df=None, debug=False,n_pools=15, n=150,
+    def __init__(self,
+                 result_table=None,
+                 df=None,
+                 debug=True,
+                 n_pools=15,
+                 n=150,
                  queue_table=None,
                  processed_table=None,
                  error_table=None,
-                 delete=False, engine=None, con=None, rand=False):
+                 delete=False,
+                 engine=None,
+                 con=None,
+                 rand=False,
+                 config=None):
         
-        if df ==None:
+        if df is None:
             df = pd.DataFrame()
-        
-        config = read_config()
+        if config == None:
+            config = read_config()
         if result_table == None:
-            result_table = config['result_table']
+            result_table = config['DATABASE']['RESULT']
         if queue_table == None:
-            queue_table = config['queue_table']
+            queue_table = config['DATABASE']['QUEUE']
         if processed_table == None:
-            processed_table = config['processed_table']
+            processed_table = config['DATABASE']['PROCESSED']
         if error_table == None:
-            error_table = config['error_table']
+            error_table = config['DATABASE']['ERROR']
 
         self.result_table = result_table
         self.queue_table = queue_table
@@ -102,7 +124,14 @@ class TempTable:
             self.con = self.engine.connect()
         
         if self.df.empty:
-            self.df = get_full_df(n_pools, n, queue_table, processed_table, delete, engine=self.engine, con=self.con, rand=rand)
+            self.df = get_full_df(n_pools=n_pools,
+                                  n=n,
+                                  queue_table=queue_table,
+                                  processed_table=processed_table,
+                                  delete=delete,
+                                  engine=self.engine,
+                                  con=self.con,
+                                  rand=rand)
 
         self.divide_df()
 
@@ -126,7 +155,7 @@ class TempTable:
                 tprint('[-] Error updating error TempTable - ', exc)    
                 
         except Exception as exc:
-            error = '[-] Error updating {} table TempTable - '.format(self.result_table)+str(exc)
+            error = f'[-] Error updating {self.result_table} table TempTable - '+str(exc)
             tprint(error[:300])
             try:
                 save = self.df
@@ -142,14 +171,20 @@ class TempTable:
         try:
             self.create()
             self.insert_table()
-            self.error.to_sql(self.error_table, con = self.con, if_exists='append', index=False)
-                
-        except Exception as exc:
-            
-            tprint('[-] Error updating {} table TempTable - '.format(self.result_table), exc)
             
             try:
-                self.df[['original_link']].to_sql(self.error_table, con = self.con, if_exists='append', index=False)
+                self.error.to_sql(self.error_table, con = self.con, if_exists='append', index=False)
+
+            except Exception as exc:
+                tprint('[-] Error updating error TempTable - ', exc)    
+                
+        except Exception as exc:
+            error = f'[-] Error updating {self.result_table} table TempTable - '+str(exc)
+            tprint(error[:300])
+            try:
+                save = self.df
+                save['info'] = save['info'].fillna(error[:255])
+                save[['original_link', 'borrar', 'info']].to_sql(self.error_table, con = self.con, if_exists='append', index=False)
             except Exception as exc:
                 tprint('[-] Error trying to save extracted rows TempTable - ', exc)
             
@@ -161,19 +196,17 @@ class TempTable:
         if self.debug == True:
             self.table_name = self.temp_name()
             self.press.to_sql(self.table_name, con=self.con, index=False)
-
         
     def destroy(self):
-        if self.table_name != None:
-            self.engine.execute('drop table if exists '+self.table_name)
-        
+        if self.table_name is not None:
+            self.engine.execute(f'drop table if exists {self.table_name}')        
         
     def insert_table(self):
         # Pendientes. arreglos
-        insert_query = '''INSERT INTO '''+self.result_table+''' (ano, autor, bajada, borrar, contenido, error, fecha, fuente, imagen, link, ok, original_link, seccion, tags, titulo) SELECT ano, autor, bajada, borrar, contenido, error, fecha, fuente, imagen, link, ok, original_link, seccion, tags, titulo FROM '''+self.table_name
+        insert_query = f'INSERT  IGNORE INTO {self.result_table} (titulo, bajada, contenido, autor, fecha, seccion, original_link, fuente, ano, imagen, tags, link) SELECT titulo, bajada, contenido, autor, fecha, seccion, original_link, fuente, ano, imagen, tags, link FROM {self.table_name}'
         
         self.engine.execute(insert_query)
-  
+
         
     def divide_df(self):
         self.press = self.df[(self.df.error==0) & (self.df.borrar==0)][['titulo', 'bajada', 'contenido', 'autor', 'fecha', 'seccion', 'original_link', 'fuente', 'ano', 'imagen', 'tags', 'link']]

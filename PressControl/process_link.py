@@ -134,7 +134,7 @@ def process_outer(link):
 
     # Mark for deletion if link isn't from any source in config.txt.
     try:
-        if d['fuente'] not in read_config()['sources']:
+        if d['fuente'] not in read_config()['SOURCES']:
             d['borrar'] = 1
             d['info'] = 'Borrar, no pertenece a los dominios buscados.'
     except:

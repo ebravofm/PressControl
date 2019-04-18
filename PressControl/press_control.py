@@ -25,8 +25,8 @@ def Home():
     title='Press Control'
     options = [
         ['Get Articles', get_article],
+        ['Work', work_UI],
         ['Scrape New Links', scrape_new_links],
-        ['Add links', TBA],
         ['SQL', TBA],
         ['Configuration', configuration]]    
     UI(title=title, options=options, home=True)
@@ -87,7 +87,23 @@ def articles(n=None, engine=None, con=None):
             input('(ENTER)')
     Home()
     
+# =======================
+#          WORK
+# =======================
+
+def work_UI(config = None):
     
+    if config == None:
+        config = read_config()
+    result = config['TABLES']['RESULT']
+    queue = config['TABLES']['QUEUE']
+    
+    title='Work'
+    description = textwrap.fill(f'This program executes a script to fill out the results table ({result}) and feeds from the queue table ({queue}). The program takes about 0.4 secods per article so it could take a while. It is recommended to run this program on a multiplexer to keep the session active.', 60)
+    options = [['Start Program', partial(program, delete=True)]]  
+    
+    UI(title=title, description=description, options=options, home=False)
+
 # =======================
 #    SCRAPE NEW LINKS
 # =======================
@@ -136,7 +152,7 @@ def scrape_twitter():
 
     
 def shuffle():
-    suffle_queue(engine=None)
+    shuffle_queue(engine=None)
     input('(ENTER)')
     Home()
     
@@ -162,7 +178,7 @@ def add_cookie():
 def allowed_domains():
     title='Allowed Domains'
     
-    description = textwrap.fill('Domains allowed to be stored on database. Currently allowed domains:', 30)+'\n\n    '+'\n    '.join(read_config()['sources'])
+    description = textwrap.fill('Domains allowed to be stored on database. Currently allowed domains:', 30)+'\n\n    '+'\n    '.join(read_config()['SOURCES'])
     
     options = [
         ['Add domain', TBA],
@@ -206,7 +222,7 @@ def UI(title='', description='', options=[], home=False):
         print('[0] Exit\n')
 
     if home == False:
-        d_options['0'] = ['Home', home]
+        d_options['0'] = ['Home', Home]
         print('[0] Home\n')
 
         

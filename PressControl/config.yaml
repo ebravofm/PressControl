@@ -1,0 +1,24 @@
+MYSQL:
+    HOST: 104.248.179.135
+    PORT: 3306
+    USER: python
+    PASSWD: prensa2018
+    DB: test
+    
+TABLES:
+    QUEUE: queue
+    PROCESSED: processed
+    RESULT: press
+    ERROR: error
+    BACKUP: all_links
+
+SOURCES:
+    - Emol
+    - Biobiochile
+    - Df
+    - Cooperativa
+    - Latercera
+    - Elmostrador
+
+CONFIG:
+    DEBUG: False
