@@ -82,6 +82,7 @@ def get_direct_link(twitter_link):
 def process_inner(requests_page):
     art = newspaper.Article('')
     art.set_html(requests_page.content)
+    art.parse()
 
     d = {}
     d['titulo'] = art.title
