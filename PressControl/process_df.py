@@ -61,8 +61,9 @@ def get_chunk_from_db(n=150,
                     rand=False):
     if con == None:
         con = engine.connect()
+        
     order = ''
-    if rand = True:
+    if rand == True:
         order = 'order by rand()'
     
     query = f'select original_link from {queue_table} {order} limit {str(n)}'
