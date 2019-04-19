@@ -3,7 +3,7 @@ import os
 
 requirements = [r for r in open('requirements.txt', 'r').read().split('\n') if r]
 
-setup(name = 'PressControl',
+setup(name = 'presscontrol',
     version = '0.1',
     description = "PressControl is a news database manager capable of scraping and saving articles from twitter pages.",
     #long_description = '',
@@ -15,8 +15,8 @@ setup(name = 'PressControl',
     packages = find_packages(),
     include_package_data = True,
     zip_safe = True,
-    entry_points = {'console_scripts': ['PressControl = PressControl.__main__:main',],},
-    data_files = [(os.environ['HOME']+'/.config/PressControl/', ['PressControl/config.yaml'])],
+    entry_points = {'console_scripts': ['presscontrol = presscontrol.__main__:main',],},
+    data_files = [(os.environ['HOME']+'/.config/presscontrol/', ['presscontrol/config.yaml'])],
     install_requires = requirements
     
 )
