@@ -1,7 +1,8 @@
 import requests
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup as bs
-from presscontrol.utils import read_config, tprint, read_cookies
+from presscontrol.utils import tprint, read_cookies
+from presscontrol.config import config
 import pandas as pd
 import random
 import urllib
@@ -134,7 +135,7 @@ def process_outer(link):
 
     # Mark for deletion if link isn't from any source in config.txt.
     try:
-        if d['fuente'] not in read_config()['SOURCES']:
+        if d['fuente'] not in config['SOURCES']:
             d['borrar'] = 1
             d['info'] = 'Borrar, no pertenece a los dominios buscados.'
     except:

@@ -1,9 +1,10 @@
 #!/usr/bin/python3
 
 from presscontrol.db_utils import get_press_rows, shuffle_queue
-from presscontrol.utils import read_config, add_cookies
+from presscontrol.utils import add_cookies
 from presscontrol.scrape import tweet2url, links2db
 from presscontrol.full import program
+from presscontrol.config import config
 from functools import partial
 import inspect
 import textwrap
@@ -29,7 +30,7 @@ def Home():
         ['Get Articles', get_article],
         ['Work', work_UI],
         ['Scrape New Links', scrape_new_links],
-        ['SQL', TBA],
+        ['Manage Database', manage_db],
         ['Configuration', configuration]]    
     UI(title=title, options=options, home=True)
     
@@ -109,10 +110,8 @@ def articles(n=None, engine=None, con=None):
 #          WORK
 # =======================
 
-def work_UI(config = None):
+def work_UI():
     
-    if config == None:
-        config = read_config()
     result = config['TABLES']['RESULT']
     queue = config['TABLES']['QUEUE']
     
@@ -130,14 +129,15 @@ def scrape_new_links():
     title='Scrape New Links'
     options = [
         ['Scrape Twitter', scrape_twitter],
-        ['Scrape SiteMap', TBA],
-        ['Shuffle Queue', shuffle]]    
+        ['Scrape SiteMap', TBA]]    
     UI(title=title, options=options, home=False)
 
     
 def scrape_twitter():
     username = input('\nUsername: ')
-    date = input('\n[1] Set date range\n[2] Days/months/years old\n\n>>> ')
+    date = input('\n[1] Set date range'+
+                 '\n[2] Days/months/years old\n'+
+                 '\n>>> ')
     print()
     since = ''
     until = ''
@@ -176,6 +176,17 @@ def shuffle():
     
 
 # =======================
+#    MANAGE DATABASE
+# =======================
+
+def manage_db():
+    title='Manage Database'
+    options = [
+        ['Shuffle Queue', shuffle]]    
+    UI(title=title, options=options, home=False)
+    
+
+# =======================
 #      CONFIGURATION
 # =======================
 
@@ -184,7 +195,7 @@ def configuration():
     options = [
         ['Allowed domains', TBA],
         ['Add Cookies', add_cookie]]    
-    UI(title=title, options=options, home=True)
+    UI(title=title, options=options, home=False)
     
 
 def add_cookie():
@@ -196,7 +207,7 @@ def add_cookie():
 def allowed_domains():
     title='Allowed Domains'
     
-    description = textwrap.fill('Domains allowed to be stored on database. Currently allowed domains:', 30)+'\n\n    '+'\n    '.join(read_config()['SOURCES'])
+    description = textwrap.fill('Domains allowed to be stored on database. Currently allowed domains:', 30)+'\n\n    '+'\n    '.join(config['SOURCES'])
     
     options = [
         ['Add domain', TBA],

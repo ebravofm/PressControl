@@ -1,6 +1,7 @@
-import presscontrol.GetOldTweets as got
+from presscontrol.utils import tprint, mysql_engine
 from datetime import datetime, timedelta
-from presscontrol.utils import tprint, mysql_engine, read_config
+import presscontrol.GetOldTweets as got
+from presscontrol.config import config
 import pandas as pd
 import os
 
@@ -73,9 +74,8 @@ def scrape_tweets(username, days=0, months=0, years=0, monthly=False,
     return tweets
 
 
-def links2db(urls, con=None, config=None):
-    if config == None:
-        config = read_config()
+def links2db(urls, con=None):
+
     backup = config['TABLES']['BACKUP']
     queue = config['TABLES']['QUEUE']
 
@@ -116,5 +116,5 @@ def links2db(urls, con=None, config=None):
         
         print('Success.')
         
-        shuffle_queue(engine=engine, config=config)
+        shuffle_queue(engine=engine)
 

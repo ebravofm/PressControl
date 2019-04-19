@@ -1,6 +1,7 @@
 from multiprocessing import Pool
 from presscontrol.process_link import process_link
-from presscontrol.utils import mysql_engine, read_config, tprint
+from presscontrol.utils import mysql_engine, tprint
+from presscontrol.config import config
 import pandas as pd
 import numpy as np
 import pickle
@@ -16,13 +17,10 @@ def get_full_df(n_pools=15,
                 delete=False,
                 engine=None,
                 con=None,
-                rand=False,
-                config=None):
+                rand=False):
     
     if engine == None:
         engine = mysql_engine()
-    if config == None:
-        config = read_config()
     if queue_table == None:
         queue_table = config['TABLES']['QUEUE']
     if processed_table == None:
@@ -94,11 +92,8 @@ def get_chunk_from_db(n=150,
                     delete=False, 
                     engine=mysql_engine(), 
                     con=None,
-                    rand=False,
-                    config=None):
+                    rand=False):
     
-    if config == None:
-        config = read_config()
     if queue_table == None:
         queue_table = config['TABLES']['QUEUE']
     if processed_table == None:

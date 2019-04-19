@@ -1,6 +1,7 @@
 from presscontrol.single import work
-from presscontrol.utils import tprint, mysql_engine, len_tables, read_config
+from presscontrol.utils import tprint, mysql_engine, len_tables
 from presscontrol.db_utils import init_mysql_db, recover_discarded
+from presscontrol.config import config
 import pandas as pd
 import sys
 
@@ -16,10 +17,10 @@ def program(result_table=None,
             engine=None, 
             con=None, 
             rand=False):
+    
     if df is None:
         df = pd.DataFrame
         
-    config = read_config()
     if result_table == None:
         result_table = config['TABLES']['RESULT']
     if queue_table == None:
@@ -28,8 +29,7 @@ def program(result_table=None,
         processed_table = config['TABLES']['PROCESSED']
     if error_table == None:
         error_table = config['TABLES']['ERROR']
-        
-
+    
     
     # Initialiazing...
     

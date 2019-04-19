@@ -1,16 +1,15 @@
-from presscontrol.utils import mysql_engine, read_config, tprint
+from presscontrol.utils import mysql_engine, tprint
+from presscontrol.config import config
 from datetime import datetime
 import pandas as pd
 import random
 
-def init_mysql_db(engine=None, config=None):
+def init_mysql_db(engine=None):
     close = False
     
     if engine == None:
         engine=mysql_engine()
         close = True
-    if config == None:
-        config = read_config()
         
     queue = config['TABLES']['QUEUE']
     processed = config['TABLES']['PROCESSED']
@@ -82,10 +81,9 @@ def init_mysql_db(engine=None, config=None):
         engine.dispose()
     
     
-def list_discarded(con=None, config=None):
+def list_discarded(con=None):
     close = False
-    if config == None:
-        config = read_config()
+
     if con == None:
         engine = mysql_engine()
         con = engine.connect()
@@ -125,7 +123,7 @@ def list_discarded(con=None, config=None):
 def recover_discarded(con=None, table=None):
     
     if table == None:
-        table = read_config()['TABLES']['ERROR']
+        table = config['TABLES']['ERROR']
         
     close = False
     
@@ -152,11 +150,8 @@ def recover_discarded(con=None, table=None):
         
 def get_press_rows(n=1, engine=None, con=None, 
                    result=None, 
-                   ids=None, source=None, config=None):
-    
-    if config == None:
-        config = read_config()
-                
+                   ids=None, source=None):
+                    
     queue = config['TABLES']['QUEUE']
     processed = config['TABLES']['PROCESSED']
     result = config['TABLES']['RESULT']
@@ -199,9 +194,8 @@ def get_press_rows(n=1, engine=None, con=None,
     return rows
 
 
-def shuffle_queue(engine=None, config=None):
-    if config == None:
-        config = read_config()
+def shuffle_queue(engine=None):
+
     queue = config['TABLES']['QUEUE']
         
     print()

@@ -1,14 +1,12 @@
+from presscontrol.config import config
 from sqlalchemy import create_engine
-import datetime
 import pandas as pd
-import os
+import datetime
 import shutil
-import yaml
+import os
 
 
-def mysql_engine(config=None):
-    if config == None:
-        config = read_config()
+def mysql_engine():
         
     host = config['MYSQL']['HOST']
     port = config['MYSQL']['PORT']
@@ -22,31 +20,8 @@ def mysql_engine(config=None):
     return engine
 
 
-def read_config():
-    '''Loads config.yaml. Looks for config file in this order: (1) ~/presscontrol/config.yaml, (2) ~/.config/presscontrol/config.yaml, (3) ./config.yaml.'''
-    config = None
-    
-    for loc in [os.environ['HOME']+'/presscontrol/config.yaml',
-                os.environ['HOME']+'/.config/presscontrol/config.yaml',
-                './config.yaml']:
-        try:
-            with open(loc) as c:
-                config = yaml.load(c)
-            break
-            
-        except IOError:
-            pass
-        
-    if config == None:
-        raise FileNotFoundError('Config file not found')
+def tprint(*args, important=True):
 
-    return config
-
-
-
-def tprint(*args, important=True, config=None):
-    if config == None:
-        config = read_config()
     debug = config['CONFIG']['DEBUG']
         
     if important == True:
@@ -125,11 +100,25 @@ def read_cookies():
     
 def add_cookies(file_path=None):   
     path = f"{os.environ['HOME']}/presscontrol/cookies/"
+    
+    try:
+        if file_path == None:
+            file_path = input('Cookie file path: ')
+        if not os.path.exists(path):
+            os.makedirs(path)
+        shutil.copyfile(file_path, path+file_path.split('/')[-1])
+        
+    except FileNotFoundError:
+        print()
+        print('File Not Found')
+        print()
+        input('(ENTER)')
+    
+def create_home_dir():
+    path = f"{os.environ['HOME']}/presscontrol/"
     if not os.path.exists(path):
         os.makedirs(path)
-    if file_path == None:
-        file_path = input('Cookie file path: ')
-    shutil.copyfile(file_path, path+file_path.split('/')[-1])
+        
 
 # Pending
 '''def write_config(field, value, append):

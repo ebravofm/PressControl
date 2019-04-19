@@ -7,3 +7,5 @@ import presscontrol.process_link
 import presscontrol.scrape
 import presscontrol.single
 import presscontrol.utils
+
+presscontrol.utils.create_home_dir()

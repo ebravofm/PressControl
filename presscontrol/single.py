@@ -1,5 +1,6 @@
-from presscontrol.utils import mysql_engine, tprint, read_config
+from presscontrol.utils import mysql_engine, tprint
 from presscontrol.process_df import get_full_df
+from presscontrol.config import config
 import pandas as pd
 from presscontrol.utils import tprint
 import time
@@ -16,14 +17,11 @@ def work(result_table=None,
          delete=False,
          engine=None, 
          con=None, 
-         rand=False,
-         config=None):
+         rand=False):
     
     if df is None:
         df = pd.DataFrame()
         
-    if config == None:
-        config = read_config()
     if result_table == None:
         result_table = config['DATABASE']['RESULT']
     if queue_table == None:
@@ -89,13 +87,10 @@ class TempTable:
                  delete=False,
                  engine=None,
                  con=None,
-                 rand=False,
-                 config=None):
+                 rand=False):
         
         if df is None:
             df = pd.DataFrame()
-        if config == None:
-            config = read_config()
         if result_table == None:
             result_table = config['DATABASE']['RESULT']
         if queue_table == None:
