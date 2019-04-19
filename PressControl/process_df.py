@@ -5,6 +5,8 @@ import pandas as pd
 import numpy as np
 import pickle
 from contextlib import closing
+import signal
+import sys
 
 
 def get_full_df(n_pools=15,
@@ -22,9 +24,9 @@ def get_full_df(n_pools=15,
     if config == None:
         config = read_config()
     if queue_table == None:
-        queue_table = config['DATABASE']['QUEUE']
+        queue_table = config['TABLES']['QUEUE']
     if processed_table == None:
-        processed_table = config['DATABASE']['PROCESSED']
+        processed_table = config['TABLES']['PROCESSED']
 
     chunk = get_chunk_from_db(n=n,
                               queue_table=queue_table,
@@ -38,26 +40,40 @@ def get_full_df(n_pools=15,
     
     return df
 
+def init_worker():
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 def populate_df(df, n_pools=15):
     pd.options.mode.chained_assignment = None
     
     row_list = list(df.T.to_dict().values())
     
-
-    with closing( Pool(15) ) as p:
-        news_dict = p.map(process_row, row_list, 15)
-
-    out = pd.DataFrame(news_dict)
-    
-    # Set Dummy variables to 0 instead of None
+    p = Pool(15, init_worker)
     
     try:
-        out.borrar[out.borrar.isnull()] = 0
-    except:
-        pass
-    return out
+        news_dict = p.map_async(process_row, row_list, 15)
+        news_dict.wait()
 
+        out = pd.DataFrame(news_dict.get())
+        
+        p.close()
+        p.join()
+
+        # Set Dummy variables to 0 instead of None
+
+        try:
+            out.borrar[out.borrar.isnull()] = 0
+        except:
+            pass
+        return out
+    
+    except KeyboardInterrupt:
+        print()
+        tprint('Interrupted')
+        p.terminate()
+        p.join()
+        sys.exit()
+        
 
 def process_row(row):
     d = process_link(row['original_link'])
@@ -84,9 +100,9 @@ def get_chunk_from_db(n=150,
     if config == None:
         config = read_config()
     if queue_table == None:
-        queue_table = config['DATABASE']['QUEUE']
+        queue_table = config['TABLES']['QUEUE']
     if processed_table == None:
-        processed_table = config['DATABASE']['PROCESSED']
+        processed_table = config['TABLES']['PROCESSED']
 
     if con == None:
         con = engine.connect()

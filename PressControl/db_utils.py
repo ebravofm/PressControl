@@ -150,21 +150,19 @@ def recover_discarded(con=None, table=None):
 
         
 def get_press_rows(n=1, engine=None, con=None, 
-                   result_table=None, 
+                   result=None, 
                    ids=None, source=None, config=None):
-    
-    if result_table==None:
-        result_table = config['TABLES']['RESULT']
     
     if config == None:
         config = read_config()
-        
+                
     queue = config['TABLES']['QUEUE']
     processed = config['TABLES']['PROCESSED']
     result = config['TABLES']['RESULT']
     error = config['TABLES']['ERROR']
     backup = config['TABLES']['BACKUP']
-
+    db = config['MYSQL']['DB']
+    
     close_engine = False
     close_con = False
     
@@ -179,7 +177,7 @@ def get_press_rows(n=1, engine=None, con=None,
         
         
     if source == None and ids == None:
-        n_rows = engine.execute(f'SELECT Auto_increment FROM information_schema.tables WHERE table_name = "{result}";').scalar()
+        n_rows = engine.execute(f'SELECT Auto_increment FROM information_schema.tables WHERE table_name = "{result}" and table_schema = "{db}";').scalar()
         ids = random.sample(range(1, n_rows), n)
 
     query = f'select * from {result} where '

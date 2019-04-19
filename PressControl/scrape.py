@@ -2,6 +2,7 @@ import PressControl.got3 as got3
 from datetime import datetime, timedelta
 from PressControl.utils import tprint, mysql_engine, read_config
 import pandas as pd
+import os
 
 def tweet2url(tweet_list=None, 
               username=None, 
@@ -86,27 +87,36 @@ def links2db(urls, con=None, config=None):
         
     df = pd.DataFrame(urls, columns=['original_link'])
     
-    save = input('Save %d links to csv file? (y/n): ' % len(df))
+    display = input(f'Display {len(df)} links? (y/n): ')
+    
+    if display == 'y':
+        print()
+        big_str = '\n'.join(urls)
+        os.system(f"echo '{big_str}' | more")
+                    
+    
+    save = input(f'Save {len(df)} links to csv file? (y/n): ')
     if save == 'y':
-        file_name = input('File name (implicit .csv): temp/')
-        df.to_csv('temp/{}.csv'.format(file_name), index=False, encoding='utf-8-sig')
-        print('Articles Saved to temp/'+file_name+'.csv')
+        print()
+        file_name = input('File name (implicit .csv): ~/PressControl/')
+        df.to_csv(f"{os.environ['HOME']}/PressControl/{file_name}.csv", index=False, encoding='utf-8-sig', header=False)
+        print(f'Articles Saved to ~/PressControl/{file_name}.csv')
         print()
         
     
-    update = input('Add %d links to database (y/n): ' % len(df))
+    update = input(f'Add {len(df)} links to database (y/n): ')
     if update == 'y':
-        
+        print()
         df.to_sql('erase', con=con, index=False, if_exists='append')
 
-        '''engine.execute(f'insert ignore into {backup} select original_link from erase')
-        engine.execute(f'insert ignore into {queue} select original_link from erase')'''
-
-        engine.execute('insert ignore into test select original_link from erase')
+        engine.execute(f'insert ignore into {backup} (original_link) select original_link from erase')
+        engine.execute(f'insert ignore into {queue} (original_link) select original_link from erase')
 
         engine.execute('drop table if exists erase')
         
         print('Success.')
+        
+        shuffle_queue(engine=engine, config=config)
 
     
 def shuffle_queue(engine=None, config=None):

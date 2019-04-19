@@ -14,8 +14,10 @@ def cli(work=False):
     if work == True:
         program(delete=True)
     else:
-        Home()
-    
+        try:
+            Home()
+        except KeyboardInterrupt:
+            Home()
 
 # =======================
 #       MAIN MENU
@@ -40,51 +42,67 @@ def get_article():
     title='Get Articles'
     options = [
         ['Single article', partial(articles, 1)],
-        ['Multiple articles', articles]]    
+        ['Multiple articles', articles]]
+    
     UI(title=title, options=options, home=False)
 
 
 def articles(n=None, engine=None, con=None):
-    if n == None:
-        while type(n)!=int:
-            try:
-                print()
-                n = int(input('How many: '))
-            except:
-                pass
-            
-    rows = get_press_rows(n=n, engine=engine, con=con)
-    
-    if n ==1:
-        print_article(rows.iloc[0])
-        input('(ENTER)')
+    try:
+        if n == None:
+            while type(n)!=int:
+                try:
+                    print()
+                    n = int(input('How many: '))
+                except KeyboardInterrupt:
+                    Home()
+                except:
+                    pass
 
-        
-    else:
-        print()
-        print('[1] Print')
-        print('[2] Save to .csv')
-        print()
-        print('[0] Cancel')
-        print()
-        
-        c = input('>>> ')
-        if c=='1':
-            for n, r in rows.iterrows():
-                print()
-                print('  {}  '.format(n+1).center(80, '*'))
-                print()
-                print_article(r)
-                print()
-                input('(ENTER {})'.format(n+1))
-                
-        elif c=='2':
-            file_name = input('File name (implicit .csv): temp/')
-            rows.to_csv('temp/{}.csv'.format(file_name), index=False, sep='|', encoding='utf-8-sig')
-            print('Articles Saved to temp/'+file_name+'.csv')
-            print()
-        
+        rows = get_press_rows(n=n, engine=engine, con=con)
+
+        if n ==1:
+            print_article(rows.iloc[0])
             input('(ENTER)')
+
+
+        else:
+            print()
+            print('[1] Print')
+            print('[2] Save to .csv')
+            print()
+            print('[0] Cancel')
+            print()
+
+            c = input('>>> ')
+            if c=='1':
+                for n, r in rows.iterrows():
+                    print()
+                    print('  {}  '.format(n+1).center(80, '*'))
+                    print()
+                    print_article(r)
+                    print()
+                    input('(ENTER {})'.format(n+1))
+
+                print()    
+                save = input('Save to csv? (y/n): ')
+                if save == 'y':
+
+                    file_name = input('File name (implicit .csv): ~/PressControl/')
+                    rows.to_csv(f"{os.environ['HOME']}/PressControl/{file_name}.csv", index=False, sep='|', encoding='utf-8-sig')
+                    print(f'Articles Saved to ~/PressControl/{file_name}.csv')
+                    print()
+                    input('(ENTER)')
+
+            elif c=='2':
+                file_name = input('File name (implicit .csv): ~/PressControl/')
+                rows.to_csv(f"{os.environ['HOME']}/PressControl/{file_name}.csv", index=False, sep='|', encoding='utf-8-sig')
+                print(f'Articles Saved to ~/PressControl/{file_name}.csv')
+                print()
+
+                input('(ENTER)')
+    except KeyboardInterrupt:
+        pass
     Home()
     
 # =======================

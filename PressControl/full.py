@@ -2,6 +2,7 @@ from PressControl.single import work
 from PressControl.utils import tprint, mysql_engine, len_tables, read_config
 from PressControl.db_utils import init_mysql_db, recover_discarded
 import pandas as pd
+import sys
 
 def program(result_table=None, 
             df=None,
@@ -61,6 +62,8 @@ def program(result_table=None,
                                   engine=engine, 
                                   con=con, 
                                   rand=rand)
+        except KeyboardInterrupt:
+            sys.exit()
             
         except Exception as exc:
             tprint('[-] Error General - ', exc)

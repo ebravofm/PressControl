@@ -53,15 +53,15 @@ def work(result_table=None,
     if not tt.df.empty:
         
         t1 = time.time()
-        tprint('[+] Done ({} seconds)'.format(round(t1-s,2)))
+        tprint(f'[+] Done ({round(t1-s,2)} seconds)')
         tprint('[·] Inserting into main table...')
 
         tt.update()
 
         f = time.time()
         
-        tprint('[+] Done ({} seconds)'.format(round(f-t1,2)))
-        tprint('[+] {}/{} news scraped in {} seconds. ({} s/article)'.format(len(tt.press), n, round(f - s,2), round((f - s)/n, 2)))
+        tprint(f'[+] Done ({round(f-t1,2)} seconds)')
+        tprint(f'[+] {len(tt.press)}/{n} news scraped in {round(f - s,2)} seconds. ({round((f - s)/n, 2)} s/article)')
         status = 'working'
                
     else:
