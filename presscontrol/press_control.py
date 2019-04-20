@@ -29,7 +29,7 @@ def Home():
     options = [
         ['Get Articles', get_article],
         ['Work', work_UI],
-        ['Scrape New Links', scrape_new_links],
+        ['Twitter', twitter],
         ['Manage Database', manage_db],
         ['Configuration', configuration]]    
     UI(title=title, options=options, home=True)
@@ -122,50 +122,110 @@ def work_UI():
     UI(title=title, description=description, options=options, home=False)
 
 # =======================
-#    SCRAPE NEW LINKS
+#        TWITTER
 # =======================
-
-def scrape_new_links():
-    title='Scrape New Links'
+    
+def twitter():
+    title='Twitter'
     options = [
-        ['Scrape Twitter', scrape_twitter],
-        ['Scrape SiteMap', TBA]]    
+        ['Scrape Twitter Accounts', scrape_twitter],
+        ['Program Twitter Task', TBA]]    
     UI(title=title, options=options, home=False)
 
     
 def scrape_twitter():
-    username = input('\nUsername: ')
-    date = input('\n[1] Set date range'+
-                 '\n[2] Days/months/years old\n'+
-                 '\n>>> ')
-    print()
-    since = ''
-    until = ''
-    years = 0
-    months = 0
-    days = 0
+    check = True
+    tasks = []
+    counter = 1
     
-    if date == '1':
-        since = input('Since (YYYY-MM-DD): ')
-        until = input('Until (YYYY-MM-DD): ')
-    elif date == '2':
+    while check:
         try:
-            years = int(input('Years: '))
-        except: pass
-        try: 
-            months = int(input('Months: '))
-        except: pass
-        try:
-            days = int(input('Days: '))
-        except: pass
+            os.system('clear')
+            print(f'Task {counter}'.center(30, '+'))
+            print('\nCtrl+C to begin scraping.')
+            counter += 1
+            
+            username = input('\nUsername: ')
+            date = input('\n[1] Set date range'+
+                         '\n[2] Days/months/years old\n'+
+                         '\n>>> ')
+            print()
+            since = ''
+            until = ''
+            years = 0
+            months = 0
+            days = 0
+
+            if date == '1':
+                since = input('Since (YYYY-MM-DD): ')
+                until = input('Until (YYYY-MM-DD): ')
+            elif date == '2':
+                try:
+                    years = int(input('Years: '))
+                except: pass
+                try: 
+                    months = int(input('Months: '))
+                except: pass
+                try:
+                    days = int(input('Days: '))
+                except: pass
+            
+            tasks += [{'username': username,
+                       'since': since,
+                       'until': until,
+                       'years': years,
+                       'months': months,
+                       'days': days}]
+
+            os.system('clear')
         
-    os.system('clear')
-    print((' Tweets: '+username+' ').center(62, '+'))
-    print()
-    urls = tweet2url(username=username, days=days, months=months, 
-                     years=years, since=since, until=until)
+        except KeyboardInterrupt:
+            os.system('clear')
+            print(f'Number of tasks: {len(tasks)}')
+            print()
+            check = False
+            b = input('Begin Scraping (y/n): ')
+            print()
+            
+    if len(tasks) > 1:
+        urls = []
+        opt = input('\n[1] Display Links '+
+                     '\n[2] Save links to .csv'+
+                     '\n[3] Add links to database\n'+
+                     '\n>>> ')
+        opts = {'1': False, '2': False, '3': False}
+        opts[opt] = True
+        
+        for task in tasks:
+
+            print((f" Tweets: {task['username']} ").center(62, '+'))
+            print()
+
+            url = tweet2url(username=task['username'], 
+                             days=task['days'], 
+                             months=task['months'], 
+                             years=task['years'], 
+                             since=task['since'], 
+                             until=task['until'])
+            urls += url
+
+        links2db(urls, display=opts['1'], save=opts['2'], update=opts['3'])
     
-    links2db(urls)
+    else:
+        for task in tasks:
+
+            print((f" Tweets: {task['username']} ").center(62, '+'))
+            print()
+
+            urls = tweet2url(username=task['username'], 
+                             days=task['days'], 
+                             months=task['months'], 
+                             years=task['years'], 
+                             since=task['since'], 
+                             until=task['until'])
+
+        links2db(urls)
+
     Home()
 
     
