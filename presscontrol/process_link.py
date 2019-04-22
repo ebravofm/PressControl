@@ -132,14 +132,14 @@ def process_outer(link):
     except:
         pass
 
-
-    # Mark for deletion if link isn't from any source in config.txt.
-    try:
-        if d['fuente'] not in config['SOURCES']:
-            d['borrar'] = 1
-            d['info'] = 'Borrar, no pertenece a los dominios buscados.'
-    except:
-        pass
+    if d['error'] == 0:
+        # Mark for deletion if link isn't from any source in config.txt.
+        try:
+            if d['fuente'] not in config['SOURCES']:
+                d['borrar'] = 1
+                d['info'] = f"Borrar, no pertenece a los dominios buscados. ({str(d['link'])[:25]}...)"
+        except:
+            pass
     
     # Restrict text field to 50.000 characters
     try:
@@ -177,9 +177,9 @@ def process_outer(link):
         pass
     
     try:
-        if d['titulo']==None and d['contenido']==None:
+        if d['titulo']==None or d['contenido']==None or d['titulo']=='' or d['contenido']=='':
             d['error'] = 1
-            d['borrar'] = 1
+            d['borrar'] = 0
             d['info'] = 'Title and content blank'
     except:
         pass
@@ -193,9 +193,32 @@ def process_outer(link):
 # Add aditional steps by source:
 
 
+
+
 def process_Df(page):
     cookies = read_cookies()
     page = requests.get(page.url, cookies=cookies['df'])
+    
+    if '¡Página no encontrada!' in page.text:
+        try:
+            tprint('[·] df.cl page not found. Searching for title...', important=False)
+
+            title_ = page.url.split('/')[3].replace('-', '+')
+            search_ = f'https://www.df.cl/cgi-bin/prontus_search.cgi?search_texto="{title_}"&search_prontus=noticias&search_tmp=search.html&search_idx=ALL&search_modo=and&search_form=yes'
+            soup = bs(page.content, 'lxml')
+
+            page = requests.get(search_)
+            soup = bs(page.content, 'lxml')
+            box = soup.find('div', {'id': 'wrap-noticias'})
+
+            new_url = 'https://www.df.cl'+box.find('article').h2.a['href']
+            tprint('[+] df.cl page found!', important=False)
+
+            page = requests.get(new_url, cookies=cookies['df'])
+
+        except Exception as exc:
+            tprint('[-] df.cl page not found', important=False)
+
     d = process_inner(page)
     soup = bs(page.content, 'lxml')
     try:
@@ -426,3 +449,17 @@ def process_Biobiochile(page):
         
     return d
 
+
+
+
+
+ALTER TABLE press
+   CHANGE title titulo  varchar(255) DEFAULT NULL,
+   CHANGE description bajada  text,
+   CHANGE text contenido  text,
+   CHANGE authors autor  varchar(300) DEFAULT NULL,
+   CHANGE date fecha  varchar(120) DEFAULT NULL,
+   CHANGE section seccion  varchar(120) DEFAULT NULL,
+   CHANGE source fuente  varchar(120) DEFAULT NULL,
+   CHANGE year ano  smallint(6) DEFAULT NULL,
+   CHANGE image imagen  varchar(300) DEFAULT NULL

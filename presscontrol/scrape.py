@@ -1,36 +1,56 @@
-from presscontrol.utils import tprint, mysql_engine
+from presscontrol.utils import tprint, mysql_engine, center_xcols
 from presscontrol.db_utils import shuffle_queue
 from datetime import datetime, timedelta
 import presscontrol.GetOldTweets as got
 from presscontrol.config import config
 import pandas as pd
 import calendar
+import pickle
 import os
+import re
 
-def tweet2url(tweets=None, user=None, days=0, months=0, years=0, 
+def tweet2url(tweets=None, user='', days=0, months=0, years=0, 
               monthly=False, yearly=False, since='',until=''):
     '''Get URLs from a list of tweets (GetOldTweets class) or perform tweet scraping by specifying a user and dates.'''
     
     urls = []
+    summary = Summary()
 
     if tweets == None:
         tweets = scrape_tweets(user=user, days=days, months=months, 
                                years=years, monthly=monthly,
                                yearly=yearly, since=since, until=until)
-    for tweet in tweets:
-        urls += tweet.urls.split(',')
-        
-    urls = [u for u in urls if u!='']
-    urls = list(set(urls))
-            
-    return urls
+    for y in tweets.keys():
+        for m in tweets[y].keys():
+            urls_ = []
+            for tweet in tweets[y][m]:
+                urls_ += get_urls(tweet)
+            urls_ = list(set(urls_))
+            urls += urls_
+            summary.add_entry(user=user, year=y, month=m, number=len(urls_))
+                        
+    return urls, summary
 
+
+def get_urls(tweet):
+    urls_tweet= tweet.urls.split(',')
+    urls_text = re.findall(r'\b((?:https?://)?(?:(?:www\.)?(?:[\da-z\.-]+)\.(?:[a-z]{2,6})|(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|(?:(?:[0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,7}:|(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}|(?:[0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}|(?:[0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}|(?:[0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(?:(?::[0-9a-fA-F]{1,4}){1,6})|:(?:(?::[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(?::[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(?:ffff(?::0{1,4}){0,1}:){0,1}(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])|(?:[0-9a-fA-F]{1,4}:){1,4}:(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])))(?::[0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])?(?:/[\w\.-]*)*/?)\b', tweet.text)
+    urls = urls_tweet+urls_text
+    urls = ['http://'+url.replace('https://', '').replace('http://', '') for url in urls]
+    urls = list(set(urls))
+    urls = [u for u in urls if u!='' and 'https://twitter.com' not in u and 'pic.twitter.com' not in u]
+
+    return urls
 
 def scrape_tweets(user, days=0, months=0, years=0, monthly=False, 
                   yearly=False, since='', until=''):
+    
+    path = f"{os.environ['HOME']}/presscontrol/twitter_tempfiles"
+    if not os.path.exists(path):
+        os.makedirs(path)
 
-    tweets = []
-    summary = Summary()
+    tweets = {}
+    counter = 0
     
     if until == '':
         until = datetime.today()+timedelta(1)
@@ -47,29 +67,51 @@ def scrape_tweets(user, days=0, months=0, years=0, monthly=False,
     since_ = since
     
     while since_ < until:
+        
+        
+        if since_.year not in tweets.keys():
+            tweets[since_.year] = {}
+
         until_ = next_date(since_) if next_date(since_) < until else until
         
         if since_.day == until_.day:
-            tprint(f'[·] Getting tweets from {calendar.month_name[since_.month]} {since_.year}')
+            pr = f'{calendar.month_name[since_.month]} {since_.year}'
         else:
-            tprint(f'[·] Getting tweets from {dt2str(since_)} to {dt2str(until_)}')
-
-        tweetCriteria = got.manager.TweetCriteria().setUsername(user).setSince(dt2str(since_)).setUntil(dt2str(until_))
-        tweets_ = got.manager.TweetManager.getTweets(tweetCriteria)
+            pr = f'{dt2str(since_)} to {dt2str(until_)}'
+            
+        filename = f"{path}/{user} {pr}.pkl"
+        tprint(f'[·] Getting tweets from {pr}')
         
+        if os.path.exists(filename):
+            tprint('[+] Found in twitter tempfiles')
+            tweets_ = pd.read_pickle(filename)
+            
+        else:
+            try:
+                tweetCriteria = got.manager.TweetCriteria().setUsername(user).setSince(dt2str(since_)).setUntil(dt2str(until_))
+                tweets_ = got.manager.TweetManager.getTweets(tweetCriteria)
+                
+                if len(tweets_) > 0:
+                    with open(f"{path}/{user} {pr}.pkl", 'wb') as f:
+                        pickle.dump(tweets_, f)
+
+            except Exception as exc:
+                tweets_ = []
+                print('\nError\n', exc)
+
         tprint(f'[+] Done ({len(tweets_)} tweets).')
-        summary.add_entry(user, since_.year, since_.month, len(tweets_))
-        tweets += tweets_
+        counter += len(tweets_)
+        tweets[since_.year][since_.month] = tweets_
         since_ = until_
         
     print()
-    tprint(f'[+] DONE ({len(tweets)} tweets)')
+    tprint(f'[+] DONE ({counter} tweets)')
         
-    return tweets, summary
+    return tweets
 
 
 def links2db(urls, con=None, display='', save='', update=''):
-    
+
     backup = config['TABLES']['BACKUP']
     queue = config['TABLES']['QUEUE']
 
@@ -90,7 +132,7 @@ def links2db(urls, con=None, display='', save='', update=''):
     
     if display == 'y':
         print()
-        big_str = '\n'.join(urls)
+        big_str = '\n'.join(urls[:1000])
         os.system(f"echo '{big_str}' | more -10")
                     
 
@@ -117,7 +159,7 @@ def links2db(urls, con=None, display='', save='', update=''):
 
     if update == 'y':
         print()
-        df.to_sql('erase', con=con, index=False, if_exists='append')
+        df.to_sql('erase', con=con, index=False, if_exists='append', chunksize=50000)
 
         engine.execute(f'insert ignore into {backup} (original_link) select original_link from erase')
         engine.execute(f'insert ignore into {queue} (original_link) select original_link from erase')
@@ -131,23 +173,60 @@ def links2db(urls, con=None, display='', save='', update=''):
 
 class Summary:
     def __init__(self):
-        self.users = {}
+        self.sum = {}
+        self.df = None
         
-    def add_entry(self, user, year, month, number):
-        if user not in self.users.keys():
-            self.users[user] = {}
-        if year not in self.users[user].keys():
-            self.users[user][year] = {}
+    def add_entry(self, user=None, year=None, month=None, number=None):
+        if user is None:
+            user = '?'
+        if user not in self.sum.keys():
+            self.sum[user] = {}
+        if year not in self.sum[user].keys():
+            self.sum[user][year] = {}
         
         if type(month) == int:
             month = calendar.month_abbr[month]
             
-        self.users[user][year][month] = number
+        self.sum[user][year][month] = number
+        
+    def add_dict(self, user, d):
+        self.sum[user] = d[list(d.keys())[0]]
+        
+    def to_df(self):
+        raw_list = []
+        for user in self.sum.keys():
+            for year in self.sum[user].keys():
+                for month in self.sum[user][year].keys():
+                    raw_list += [[user,year,month,self.sum[user][year][month]]]
+        self.df = pd.DataFrame(raw_list, columns=['user', 'year', 'month', 'n'])
         
     def print(self):
-        pass
+        for user in self.sum.keys():
+            print()
+            print(f'  {user}  '.center(60, '='))
+            print()
+            for year in self.sum[user].keys():
+                print(year,':')
+                print()
+                l = []
+                for month in self.sum[user][year].keys():
+                    l.append(month+': '+str(self.sum[user][year][month])+' links')
+                center_xcols(l, width=60, ncols=3)
+                print()
+                
+    def dump_csv(self):
+        filename = f"{os.environ['HOME']}/presscontrol/twitter_scrape_1.csv"
+        i = 1
+        while os.path.exists(filename):
+            filename = '_'.join(filename.split('_')[:-1])+f'_{i}.csv'
+            i += 1
+            
+        if self.df is None:
+            self.to_df()
+        self.df.to_csv(filename, index=False, encoding='utf-8-sig')
+        print(f'Summary saved to {filename}')
 
-    
+
 def next_date(sourcedate):
     
     if sourcedate.day == 1:

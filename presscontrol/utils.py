@@ -120,11 +120,39 @@ def create_home_dir():
         os.makedirs(path)
         
 
-# Pending
-'''def write_config(field, value, append):
-    with open('config.conf', 'r') as input_file, open('config.conf', 'w') as output_file:
-        for line in input_file:
-            if field in line:
-                output_file.write(line.split('=')[0])
-            else:
-                output_file.write(line)   ''' 
+def center_xcols(*args, width=60, ncols=2):
+    
+    if type(args[0])==list and len(args)==1:
+        args = args[0]
+        
+    ncols = min(ncols, len(args))
+        
+    rows = []
+    for i in range(0, len(args), ncols):
+        rows.append(args[i:i+ncols])
+
+    cols = {}
+    lens = []
+    for i in range(ncols):
+        cols[i] = []
+        for row in rows:
+            try:
+                cols[i] += [row[i]]
+            except:
+                pass
+        lens += [max([len(x) for x in cols[i]])]
+                     
+    s = (width-sum(lens))//ncols+1
+
+    strings = []
+    for row in rows:
+        t = ''
+        for i in range(len(row)):
+            t += row[i]+' '*(s+lens[0]+s-len(row[i])-s)
+        t = t.strip()
+        strings.append(t)
+    
+    s2 = ' '*((width-max([len(x) for x in strings]))//2)
+    
+    to_print = s2+('\n'+s2).join(strings)
+    print(to_print)

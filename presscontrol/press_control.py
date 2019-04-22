@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
 from presscontrol.db_utils import get_press_rows, shuffle_queue
-from presscontrol.utils import add_cookies
-from presscontrol.scrape import tweet2url, links2db
+from presscontrol.utils import add_cookies, center_xcols
+from presscontrol.scrape import tweet2url, links2db, Summary
 from presscontrol.full import program
 from presscontrol.config import config
 from functools import partial
@@ -136,6 +136,7 @@ def twitter():
 def scrape_twitter():
     check = True
     tasks = []
+    summary = Summary()
     counter = 1
     
     while check:
@@ -201,13 +202,14 @@ def scrape_twitter():
             print((f" Tweets: {task['username']} ").center(62, '+'))
             print()
 
-            url = tweet2url(username=task['username'], 
+            url, summary_ = tweet2url(user=task['username'], 
                              days=task['days'], 
                              months=task['months'], 
                              years=task['years'], 
                              since=task['since'], 
                              until=task['until'])
             urls += url
+            summary.add_dict(user=task['username'], d=summary_.sum)
 
         links2db(urls, display=opts['1'], save=opts['2'], update=opts['3'])
     
@@ -217,14 +219,19 @@ def scrape_twitter():
             print((f" Tweets: {task['username']} ").center(62, '+'))
             print()
 
-            urls = tweet2url(username=task['username'], 
+            url, summary_ = tweet2url(user=task['username'], 
                              days=task['days'], 
                              months=task['months'], 
                              years=task['years'], 
                              since=task['since'], 
                              until=task['until'])
-
-        links2db(urls)
+            summary.add_dict(user=task['username'], d=summary_.sum)
+        links2db(url)
+    
+    if input('Print Summary? (y/n): ') == 'y':
+        summary.print()
+    summary.dump_csv()
+    input('(ENTER)')
 
     Home()
 

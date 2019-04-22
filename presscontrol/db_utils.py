@@ -88,30 +88,14 @@ def list_discarded(con=None):
         engine = mysql_engine()
         con = engine.connect()
         close = True
-
-    queue = config['TABLES']['QUEUE']
-    processed = config['TABLES']['PROCESSED']
-    result = config['TABLES']['RESULT']
-    error = config['TABLES']['ERROR']
-    backup = config['TABLES']['BACKUP']
-
-    processed_list = []
-    result_list = []
-    error_list = []
-    
-    ps = pd.read_sql(f"select original_link from {processed}", con=con, chunksize=50000)
-    for p in ps:
-        processed_list += p.original_link.tolist()
         
-    rs = pd.read_sql(f"select original_link from {result}", con=con, chunksize=50000)
-    for r in rs:
-        result_list += r.original_link.tolist()
+    tables = ['PROCESSED', 'RESULT', 'ERROR']
         
-    es = pd.read_sql(f"select original_link from {error}", con=con, chunksize=50000)
-    for e in es:
-        error_list += e.original_link.tolist()
-        
-    discarded = set(processed_list) - set(result_list) - set(error_list)
+    sets = {}
+    for table in tables:
+        sets[table]= column_as_set(f"select original_link from {config['TABLES'][table]}")
+                
+    discarded = sets['PROCESSED'] - sets['RESULT'] - sets['ERROR']
         
     if close == True:
         con.close()
@@ -120,6 +104,43 @@ def list_discarded(con=None):
     return list(discarded)
 
 
+def column_as_set(query, con=None):
+    '''Gets the first column of a MySQL query as a set'''
+    
+    if con == None:
+        engine = mysql_engine()
+        con = engine.connect()
+
+    df = pd.read_sql(query, con=con, chunksize=50000)
+    query_set = set()
+    for d in df:
+        query_set.update(d.iloc[:,0].tolist())
+        
+    return query_set
+
+def insert_set(iterable, table, column, engine=None, con=None):
+
+    if engine == None and con == None:
+        engine = mysql_engine()
+        
+    if con == None:
+        con = engine.connect()
+    
+    iterable = list(iterable)
+    
+    df = pd.DataFrame({'original_link': iterable})
+    
+    df.to_sql('erase',
+              con = con,
+              if_exists='replace',
+              index=False, 
+              chunksize=50000)
+    engine.execute(f'insert ignore into {table} ({column}) select {column} from erase')
+    engine.execute('drop table erase')
+    
+
+
+        
 def recover_discarded(con=None, table=None):
     
     if table == None:
