@@ -198,13 +198,13 @@ class TempTable:
         
     def insert_table(self):
         # Pendientes. arreglos
-        insert_query = f'INSERT  IGNORE INTO {self.result_table} (titulo, bajada, contenido, autor, fecha, seccion, original_link, fuente, ano, imagen, tags, link) SELECT titulo, bajada, contenido, autor, fecha, seccion, original_link, fuente, ano, imagen, tags, link FROM {self.table_name}'
+        insert_query = f'INSERT  IGNORE INTO {self.result_table} (title, description, body, authors, date, section, original_link, source, year, image, tags, link) SELECT title, description, body, authors, date, section, original_link, source, year, image, tags, link FROM {self.table_name}'
         
         self.engine.execute(insert_query)
 
         
     def divide_df(self):
-        self.press = self.df[(self.df.error==0) & (self.df.borrar==0)][['titulo', 'bajada', 'contenido', 'autor', 'fecha', 'seccion', 'original_link', 'fuente', 'ano', 'imagen', 'tags', 'link']]
+        self.press = self.df[(self.df.error==0) & (self.df.borrar==0)][['title', 'description', 'body', 'authors', 'date', 'section', 'original_link', 'source', 'year', 'image', 'tags', 'link']]
         self.error = self.df[(self.df.error==1) | (self.df.borrar==1)][['original_link', 'borrar', 'info']]
            
         

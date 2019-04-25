@@ -25,7 +25,8 @@ def get_full_df(n_pools=15,
         queue_table = config['TABLES']['QUEUE']
     if processed_table == None:
         processed_table = config['TABLES']['PROCESSED']
-
+    
+    tprint('[·] Getting chunk...')
     chunk = get_chunk_from_db(n=n,
                               queue_table=queue_table,
                               processed_table=processed_table,
@@ -34,6 +35,7 @@ def get_full_df(n_pools=15,
                               con=con,
                               rand=rand)
     
+    tprint('[·] Populating chunk...')
     df = populate_df(chunk, n_pools=n_pools)
     
     return df
@@ -78,7 +80,7 @@ def process_row(row):
 
     d['original_link'] = row['original_link']
     
-    fields = ['titulo', 'bajada', 'contenido', 'autor', 'fecha', 'seccion', 'fuente', 'ano', 'imagen', 'error', 'borrar', 'tags', 'link', 'info']
+    fields = ['title', 'description', 'body', 'authors', 'date', 'section', 'source', 'year', 'image', 'error', 'borrar', 'tags', 'link', 'info']
     
     for f in fields:
         if f not in d.keys(): d[f] = None

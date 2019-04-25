@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from presscontrol.db_utils import get_press_rows, shuffle_queue
+from presscontrol.db_utils import get_press_rows, shuffle_table
 from presscontrol.utils import add_cookies, center_xcols
 from presscontrol.scrape import tweet2url, links2db, Summary
 from presscontrol.full import program
@@ -142,7 +142,7 @@ def scrape_twitter():
     while check:
         try:
             os.system('clear')
-            print(f'Task {counter}'.center(30, '+'))
+            print(f' Task {counter} '.center(30, '+'))
             print('\nCtrl+C to begin scraping.')
             counter += 1
             
@@ -160,6 +160,7 @@ def scrape_twitter():
             if date == '1':
                 since = input('Since (YYYY-MM-DD): ')
                 until = input('Until (YYYY-MM-DD): ')
+                
             elif date == '2':
                 try:
                     years = int(input('Years: '))
@@ -188,6 +189,7 @@ def scrape_twitter():
             b = input('Begin Scraping (y/n): ')
             print()
             
+    
     if len(tasks) > 1:
         urls = []
         opt = input('\n[1] Display Links '+
@@ -237,7 +239,7 @@ def scrape_twitter():
 
     
 def shuffle():
-    shuffle_queue(engine=None)
+    shuffle_table(engine=None)
     input('(ENTER)')
     Home()
     
@@ -346,42 +348,42 @@ def print_article(r):
     try: print('URL: '+r.link)
     except: pass
     
-    try: print('IMAGEN: '+r.imagen)
+    try: print('IMAGEN: '+r.image)
     except: pass
     
     try: print('TAGS: '+r.tags)
     except: pass
     print()
     
-    try: print(r.fecha.rjust(80, ' '))
+    try: print(r.date.rjust(80, ' '))
     except: pass
     
-    try: print(r.fuente, '(id: {})'.format(r.id))
+    try: print(r.source, '(id: {})'.format(r.id))
     except: pass
     
     try:
         print('='*80)
-        title = textwrap.fill(r.titulo, 80).split('\n')
+        title = textwrap.fill(r.title, 80).split('\n')
         for t in title:
             print(t.center(80, ' '))
         print('='*80)
     except: pass
     
-    try: print('Author: '+r.autor)
+    try: print('Author: '+r.authors)
     except: pass
     
     try: 
-        print('Section: '+r.seccion)
+        print('Section: '+r.section)
         print()
     except: pass
     
     try:
-        print(textwrap.fill(r.bajada, 80))
+        print(textwrap.fill(r.description, 80))
         print()
     except: pass
     
     try: 
-        print(textwrap.fill(r.contenido, 80))
+        print(textwrap.fill(r.body, 80))
         print()
     except: pass
     

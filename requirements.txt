@@ -5,3 +5,4 @@ newspaper3k
 google
 pyquery
 mysql-connector-python
+python-crontab

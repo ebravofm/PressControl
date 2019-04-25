@@ -86,17 +86,17 @@ def process_inner(requests_page):
     art.parse()
 
     d = {}
-    d['titulo'] = art.title
-    d['bajada'] = art.meta_description
-    d['contenido'] = art.text
-    d['autor'] = ', '.join(art.authors)
-    d['fecha'] = art.publish_date
+    d['title'] = art.title
+    d['description'] = art.meta_description
+    d['body'] = art.text
+    d['authors'] = ', '.join(art.authors)
+    d['date'] = art.publish_date
     d['link'] = requests_page.url
-    d['fuente'] = urlparse(requests_page.url).netloc.split('.')[-2].capitalize()
-    d['imagen'] = art.top_image
+    d['source'] = urlparse(requests_page.url).netloc.split('.')[-2].capitalize()
+    d['image'] = art.top_image
     d['error'] = 0
     try:
-        d['ano'] = art.date_publish.year
+        d['year'] = art.date_publish.year
     except: 
         pass
     
@@ -107,7 +107,7 @@ def process_inner(requests_page):
 def process_outer(link):
 
     page = requests.get(link)
-    fuente = urlparse(page.url).netloc.split('.')[-2].capitalize()
+    source = urlparse(page.url).netloc.split('.')[-2].capitalize()
 
     # Personalized treatment by source
 
@@ -119,8 +119,8 @@ def process_outer(link):
         'Elmostrador': process_Elmostrador,
         'Biobiochile': process_Biobiochile,
     }
-    if fuente in action.keys():
-        d = action[fuente](page)
+    if source in action.keys():
+        d = action[source](page)
     else:
         d = process_inner(page)
 
@@ -128,14 +128,14 @@ def process_outer(link):
     # Add year
 
     try:
-        d['ano'] = d['fecha'].year
+        d['year'] = d['date'].year
     except:
         pass
 
     if d['error'] == 0:
         # Mark for deletion if link isn't from any source in config.txt.
         try:
-            if d['fuente'] not in config['SOURCES']:
+            if d['source'] not in config['SOURCES']:
                 d['borrar'] = 1
                 d['info'] = f"Borrar, no pertenece a los dominios buscados. ({str(d['link'])[:25]}...)"
         except:
@@ -143,13 +143,13 @@ def process_outer(link):
     
     # Restrict text field to 50.000 characters
     try:
-        d['contenido'] = d['contenido'][:50000]
+        d['body'] = d['body'][:50000]
     except:
         pass
 
     # Encode Links
     try:
-        d['imagen'] = urllib.parse.quote(d['imagen']).replace('%3A', ':')
+        d['image'] = urllib.parse.quote(d['image']).replace('%3A', ':')
     except:
         pass
     try:
@@ -157,27 +157,27 @@ def process_outer(link):
     except:
         pass
 
-    # Encode content and bajada and titulo
+    # Encode content and description and title
     try:
-        d['contenido'] = d['contenido'].encode('latin1', 'ignore').decode('latin1')
-        #d['contenido'] = d['contenido'].replace('\x80', '')
+        d['body'] = d['body'].encode('latin1', 'ignore').decode('latin1')
+        #d['body'] = d['body'].replace('\x80', '')
     except:
         pass
 
     try:
-        d['bajada'] = d['bajada'].encode('latin1', 'ignore').decode('latin1')
-        d['bajada'] = d['bajada'].replace('\x80', '')
+        d['description'] = d['description'].encode('latin1', 'ignore').decode('latin1')
+        d['description'] = d['description'].replace('\x80', '')
     except:
         pass   
 
     try:
-        d['titulo'] = d['titulo'].encode('latin1', 'ignore').decode('latin1')
-        d['titulo'] = d['titulo'].replace('\x80', '')
+        d['title'] = d['title'].encode('latin1', 'ignore').decode('latin1')
+        d['title'] = d['title'].replace('\x80', '')
     except:
         pass
     
     try:
-        if d['titulo']==None or d['contenido']==None or d['titulo']=='' or d['contenido']=='':
+        if d['title']==None or d['body']==None or d['title']=='' or d['body']=='':
             d['error'] = 1
             d['borrar'] = 0
             d['info'] = 'Title and content blank'
@@ -222,13 +222,13 @@ def process_Df(page):
     d = process_inner(page)
     soup = bs(page.content, 'lxml')
     try:
-        d['seccion'] = soup.find('meta', {'name': 'keywords'})['content'].strip()
+        d['section'] = soup.find('meta', {'name': 'keywords'})['content'].strip()
     except Exception as exc:
-        tprint('[-] Error parsing seccion (Df) - ', exc, important=False)
+        tprint('[-] Error parsing section (Df) - ', exc, important=False)
     try:
-        d['contenido'] = '\n'.join([p for p in d['contenido'].split('\n') if len(p.split())>4 and p!=d['bajada']])
+        d['body'] = '\n'.join([p for p in d['body'].split('\n') if len(p.split())>4 and p!=d['description']])
     except Exception as exc:
-        tprint('[-] Error parsing contenido (Df) - ', exc, important=False)
+        tprint('[-] Error parsing body (Df) - ', exc, important=False)
     return d
 
 
@@ -236,14 +236,14 @@ def process_Emol(page):
     d = process_inner(page)
     soup = bs(page.content, 'lxml')
     try:
-        d['seccion'] = d['link'].split('/')[4].capitalize()
+        d['section'] = d['link'].split('/')[4].capitalize()
     except Exception as exc:
-        tprint('[-] Error parsing seccion (Emol) - ', exc, important=False)
+        tprint('[-] Error parsing section (Emol) - ', exc, important=False)
 
     try:
-        d['autor'] = soup.find('div', {'class', 'info-notaemol-porfecha'}).text.split('|')[-1].strip().replace('Por ','').replace('Redactado por ', '')
+        d['authors'] = soup.find('div', {'class', 'info-notaemol-porfecha'}).text.split('|')[-1].strip().replace('Por ','').replace('Redactado por ', '')
     except Exception as exc:
-        tprint('[-] Error parsing seccion (Emol) - ', exc, important=False)
+        tprint('[-] Error parsing section (Emol) - ', exc, important=False)
 
     return d
 
@@ -294,38 +294,38 @@ def process_Latercera(page):
 
     soup = bs(page.content, 'lxml')
     
-    ### Recuperar Imagen.
+    ### Recuperar Image.
     try:
-        d['imagen'] = soup.find('figure').find('img')['src']
+        d['image'] = soup.find('figure').find('img')['src']
     except Exception as exc:
-        tprint('[-] Error parsing imagen (Latercera) - ', exc, important=False)
+        tprint('[-] Error parsing image (Latercera) - ', exc, important=False)
 
     ### Recuperar Autor
     
     try:
-        d['autor'] = [h.text for h in soup.find_all('h4') if 'Autor' in h.text][0].replace('Autor: ', '')
+        d['authors'] = [h.text for h in soup.find_all('h4') if 'Autor' in h.text][0].replace('Autor: ', '')
     except Exception as exc:
-        tprint('[-] Error parsing autor (Latercera) - ', exc, important=False)
+        tprint('[-] Error parsing authors (Latercera) - ', exc, important=False)
         
 
     try:
-        if d['bajada'] == None:
-            d['bajada'] = soup.find('div', {'class': 'bajada-art'}).text
+        if d['description'] == None:
+            d['description'] = soup.find('div', {'class': 'bajada-art'}).text
     except Exception as exc:
-        tprint('[-] Error parsing bajada (Latercera) - ', exc, important=False)
+        tprint('[-] Error parsing description (Latercera) - ', exc, important=False)
 
     try:
-        if d['fecha'] == None:
-            fecha = ' '.join(soup.find('span', {'class': 'time-ago'}).text.replace('|', '').split())
-            d['fecha'] = datetime.datetime.strptime(fecha, '%d/%m/%Y %I:%M %p')
+        if d['date'] == None:
+            date = ' '.join(soup.find('span', {'class': 'time-ago'}).text.replace('|', '').split())
+            d['date'] = datetime.datetime.strptime(date, '%d/%m/%Y %I:%M %p')
     except Exception as exc:
         tprint('[-] Error parsing date (Latercera) - ', exc, important=False)
 
     try:
-        d['seccion'] = soup.find('meta', property='article:section')['content']
+        d['section'] = soup.find('meta', property='article:section')['content']
     except:
         try:
-            d['seccion'] = [x.find('a').text for x in soup.find_all('h4') if x.find('a')!=None and 'canal' in x.find('a')['href']][0]
+            d['section'] = [x.find('a').text for x in soup.find_all('h4') if x.find('a')!=None and 'canal' in x.find('a')['href']][0]
         except Exception as exc:
             tprint('[-] Error parsing section (Latercera) - ', exc, important=False)
 
@@ -343,7 +343,7 @@ def process_Latercera(page):
 def process_Cooperativa(page):
     d = process_inner(page)
     try:
-        if 'al aire libre' in d['titulo'].lower():
+        if 'al aire libre' in d['title'].lower():
             d = {'borrar':1, info:'Borrar, Al aire libre'}
     except:
         pass
@@ -351,14 +351,14 @@ def process_Cooperativa(page):
     soup = bs(page.content, 'lxml')
 
     try:
-        d['autor'] = soup.find('div', {'class': 'fecha-publicacion'}).find('span').text
+        d['authors'] = soup.find('div', {'class': 'fecha-publicacion'}).find('span').text
     except Exception as exc:
-        tprint('[-] Error parsing autor (Cooperativa) - ', exc, important=False)
+        tprint('[-] Error parsing authors (Cooperativa) - ', exc, important=False)
 
     try:
-        d['seccion'] = soup.find('a', {'id': 'linkactivo'}).text
+        d['section'] = soup.find('a', {'id': 'linkactivo'}).text
     except Exception as exc:
-        tprint('[-] Error parsing seccion (Cooperativa) - ', exc, important=False)
+        tprint('[-] Error parsing section (Cooperativa) - ', exc, important=False)
 
     try:
         d['tags'] = soup.find('meta', {'name': 'keywords'})['content'].strip()
@@ -370,18 +370,18 @@ def process_Cooperativa(page):
     except Exception as exc:
         tprint('[-] Error parsing link (Cooperativa) - ', exc, important=False)
     
-    if not d['fecha']:
+    if not d['date']:
         try:
-            fecha = [x for x in d['link'].split('/') if '-' in x][-1].split('-')
-            d['fecha'] = datetime.datetime(*map(int,fecha))
+            date = [x for x in d['link'].split('/') if '-' in x][-1].split('-')
+            d['date'] = datetime.datetime(*map(int,date))
         except Exception as exc:
-            tprint('[-] Error parsing fecha (Cooperativa) - ', exc, important=False)
+            tprint('[-] Error parsing date (Cooperativa) - ', exc, important=False)
     
     try:
-        if 'www.cooperativa.cl' not in d['imagen'] and d['imagen']:
-            d['imagen'] = 'https://www.cooperativa.cl'+d['imagen']
+        if 'www.cooperativa.cl' not in d['image'] and d['image']:
+            d['image'] = 'https://www.cooperativa.cl'+d['image']
     except Exception as exc:
-        tprint('[-] Error fixing imagen (Cooperativa) - ', exc, important=False)
+        tprint('[-] Error fixing image (Cooperativa) - ', exc, important=False)
 
     return d
 
@@ -389,39 +389,39 @@ def process_Cooperativa(page):
 def process_Elmostrador(page):
     d = process_inner(page)
     soup = bs(page.content, 'lxml')
-    d['bajada'] = None
+    d['description'] = None
     try:
-        d['bajada'] = soup.find('figcaption').text
+        d['description'] = soup.find('figcaption').text
     except Exception as exc:
-        tprint('[-] Error parsing bajada (Elmostrador) - ',exc, important=False)
+        tprint('[-] Error parsing description (Elmostrador) - ',exc, important=False)
 
     try:
-        d['autor'] = soup.find('p', {'class': 'autor-y-fecha'}).find('a').text
+        d['authors'] = soup.find('p', {'class': 'autor-y-fecha'}).find('a').text
     except Exception as exc:
-        tprint('[-] Error parsing autor (Elmostrador) - ',exc, important=False)
+        tprint('[-] Error parsing authors (Elmostrador) - ',exc, important=False)
 
     try:
-        if 'www.elmostrador.cl' not in d['imagen'] and d['imagen']:
-            d['imagen'] = 'https://www.elmostrador.cl'+d['imagen']
+        if 'www.elmostrador.cl' not in d['image'] and d['image']:
+            d['image'] = 'https://www.elmostrador.cl'+d['image']
     except Exception as exc:
         tprint('[-] Error fixing image (Elmostrador) - ',exc, important=False)
 
-    if not d['fecha']:
+    if not d['date']:
         try:
-            fecha = [s for s in d['link'].split('/') if s.isdigit()][:3]
-            d['fecha'] = datetime.datetime(*map(int,fecha))
+            date = [s for s in d['link'].split('/') if s.isdigit()][:3]
+            d['date'] = datetime.datetime(*map(int,date))
         except Exception as exc:
-            tprint('[-] Error parsing fecha (Elmostrador) - ',exc, important=False)
+            tprint('[-] Error parsing date (Elmostrador) - ',exc, important=False)
     
     try:
-        d['seccion'] = ' '.join([x for x in soup.find_all('h2') if x.find('i')!=None][0].text.split())
+        d['section'] = ' '.join([x for x in soup.find_all('h2') if x.find('i')!=None][0].text.split())
     except Exception as exc:
-        tprint('[-] Error parsing seccion (Elmostrador) - ',exc, important=False)
+        tprint('[-] Error parsing section (Elmostrador) - ',exc, important=False)
     
     try:
-        d['contenido'] = d['contenido'].split('__________________')[0]
+        d['body'] = d['body'].split('__________________')[0]
     except Exception as exc:
-        tprint('[-] Error fixing contenido (Elmostrador) - ',exc, important=False)
+        tprint('[-] Error fixing body (Elmostrador) - ',exc, important=False)
     
     return d
 
@@ -430,36 +430,21 @@ def process_Biobiochile(page):
     d = process_inner(page)
     soup = bs(page.content, 'lxml')
     try:
-        d['autor'] = soup.find('div', {'class': 'nota-autor'}).find('a').text
+        d['authors'] = soup.find('div', {'class': 'nota-autor'}).find('a').text
     except Exception as exc:
-        tprint('[-] Error parsing autor (Biobiochile) - ',exc, important=False)
+        tprint('[-] Error parsing authors (Biobiochile) - ',exc, important=False)
     try:
-        d['seccion'] = ' '.join(soup.find('div', {'class': 'categoria-titulo-nota'}).text.split())
+        d['section'] = ' '.join(soup.find('div', {'class': 'categoria-titulo-nota'}).text.split())
     except Exception as exc:
-        tprint('[-] Error parsing seccion (Biobiochile) - ',exc, important=False)
+        tprint('[-] Error parsing section (Biobiochile) - ',exc, important=False)
     try:
-        d['contenido'] = soup.find('div', {'class': 'nota-contenido'}).text
-        d['contenido'] = d['contenido'].replace('Etiquetas de esta nota:', '')
+        d['body'] = soup.find('div', {'class': 'nota-body'}).text
+        d['body'] = d['body'].replace('Etiquetas de esta nota:', '')
     except Exception as exc:
-        tprint('[-] Error parsing contenido (Biobiochile) - ',exc, important=False)
+        tprint('[-] Error parsing body (Biobiochile) - ',exc, important=False)
     try:
-        d['bajada'] = None
+        d['description'] = None
     except Exception as exc:
-        tprint('[-] Error parsing bajada (Biobiochile) - ',exc, important=False)
+        tprint('[-] Error parsing description (Biobiochile) - ',exc, important=False)
         
     return d
-
-
-
-
-
-ALTER TABLE press
-   CHANGE title titulo  varchar(255) DEFAULT NULL,
-   CHANGE description bajada  text,
-   CHANGE text contenido  text,
-   CHANGE authors autor  varchar(300) DEFAULT NULL,
-   CHANGE date fecha  varchar(120) DEFAULT NULL,
-   CHANGE section seccion  varchar(120) DEFAULT NULL,
-   CHANGE source fuente  varchar(120) DEFAULT NULL,
-   CHANGE year ano  smallint(6) DEFAULT NULL,
-   CHANGE image imagen  varchar(300) DEFAULT NULL

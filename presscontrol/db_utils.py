@@ -24,30 +24,30 @@ def init_mysql_db(engine=None):
 
     queue_query = f'''
     CREATE TABLE IF NOT EXISTS {queue} (
-        id INT(11) NOT NULL Auto_increment,
-        original_link VARCHAR(300),
-
-        PRIMARY KEY (id)
-    ) CHARSET=utf8mb4; '''
+      original_link varchar(300) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+      id int(11) NOT NULL AUTO_INCREMENT,
+      PRIMARY KEY (id),
+      UNIQUE KEY no_duplicates (original_link)
+    ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4; '''
 
     result_query = f'''
     CREATE TABLE IF NOT EXISTS {result} (
-        id INT(11) NOT NULL Auto_increment,
-        titulo VARCHAR(255),
-        bajada TEXT,
-        contenido TEXT,
-        autor VARCHAR(300),
-        fecha VARCHAR(120),
-        seccion VARCHAR(120),
-        original_link VARCHAR(300),
-        fuente VARCHAR(120),
-        ano SMALLINT(6),
-        imagen VARCHAR(300),
-        tags VARCHAR(300),
-        link VARCHAR(300),
-
-        PRIMARY KEY (id)
-    ) CHARSET=utf8mb4 Auto_increment=1; '''
+      id int(11) NOT NULL AUTO_INCREMENT,
+      title varchar(255) DEFAULT NULL,
+      description text,
+      body text,
+      authors varchar(300) DEFAULT NULL,
+      date varchar(120) DEFAULT NULL,
+      section varchar(120) DEFAULT NULL,
+      original_link varchar(300) DEFAULT NULL,
+      source varchar(120) DEFAULT NULL,
+      year smallint(6) DEFAULT NULL,
+      image varchar(300) DEFAULT NULL,
+      tags varchar(300) DEFAULT NULL,
+      link varchar(300) DEFAULT NULL,
+      PRIMARY KEY (id),
+      UNIQUE KEY no_duplicates (link)
+    ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4'''
 
     error_query = f'''
     CREATE TABLE IF NOT EXISTS {error} (
@@ -215,12 +215,12 @@ def get_press_rows(n=1, engine=None, con=None,
     return rows
 
 
-def shuffle_queue(engine=None):
-
-    queue = config['TABLES']['QUEUE']
+def shuffle_table(table=None, engine=None):
+    if table is None:
+        table = config['TABLES']['QUEUE']
         
     print()
-    x = input('Shuffle queue? Recomended to prevent IP being banned (y/n): ')
+    x = input(f'Shuffle {table}? Recomended to prevent IP being banned (y/n): ')
     print()
     
     if x == 'y':
@@ -228,13 +228,13 @@ def shuffle_queue(engine=None):
         if engine == None:
             engine = mysql_engine()
 
-        temp = f'{queue}_backup_'+datetime.now().strftime('%d_%m')
+        temp = f'{table}_backup_'+datetime.now().strftime('%d_%m')
 
-        tprint('[·] Shuffling queue table (can take up to 5 mins).')
+        tprint(f'[·] Shuffling table {table} (can take up to 5 mins).')
 
-        engine.execute(f'create table {temp} like {queue}')
-        engine.execute(f'insert into {temp} (original_link) select original_link from queue order by rand()')
+        engine.execute(f'create table {temp} like {table}')
+        engine.execute(f'insert into {temp} (original_link) select original_link from {table} order by rand()')
                 
-        engine.execute(f'drop table {queue}')
-        engine.execute(f'rename table {temp} to {queue}')
+        engine.execute(f'drop table {table}')
+        engine.execute(f'rename table {temp} to {table}')
         tprint('[+] Done shuffling.')

@@ -1,5 +1,5 @@
 from presscontrol.utils import tprint, mysql_engine, center_xcols
-from presscontrol.db_utils import shuffle_queue
+from presscontrol.db_utils import shuffle_table
 from datetime import datetime, timedelta
 import presscontrol.GetOldTweets as got
 from presscontrol.config import config
@@ -38,7 +38,11 @@ def get_urls(tweet):
     urls = urls_tweet+urls_text
     urls = ['http://'+url.replace('https://', '').replace('http://', '') for url in urls]
     urls = list(set(urls))
-    urls = [u for u in urls if u!='' and 'https://twitter.com' not in u and 'pic.twitter.com' not in u]
+    urls = [u for u in urls if 
+            u!='' and 
+            'twitter.com' not in u and 
+            'pic.twitter.com' not in u and 
+            u!='http://']
 
     return urls
 
@@ -168,7 +172,7 @@ def links2db(urls, con=None, display='', save='', update=''):
         
         print('Success.')
         
-        shuffle_queue(engine=engine)
+        shuffle_table(engine=engine)
         
 
 class Summary:
