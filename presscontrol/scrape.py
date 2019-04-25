@@ -46,6 +46,7 @@ def get_urls(tweet):
 
     return urls
 
+
 def scrape_tweets(user, days=0, months=0, years=0, monthly=False, 
                   yearly=False, since='', until=''):
     
@@ -114,67 +115,65 @@ def scrape_tweets(user, days=0, months=0, years=0, monthly=False,
     return tweets
 
 
-def links2db(urls, con=None, display='', save='', update=''):
+def links2db(urls, engine=None, con=None, display='', save='', update='', file_name=None, shuffle=False):
 
-    backup = config['TABLES']['BACKUP']
-    queue = config['TABLES']['QUEUE']
-
-    if con == None:
-        engine = mysql_engine()
-        con = engine.connect()
-
-    engine.execute('drop table if exists erase')
-        
     df = pd.DataFrame(urls, columns=['original_link'])
     
-    if display == False:
-        display = 'n'
-    elif display == True:
-        display = 'y'
-    else:
-        display = input(f'Display {len(df)} links? (y/n): ')
-    
-    if display == 'y':
+    if display=='' and save=='' and update=='':
+        opt = input('\n[1] Display Links '+
+                    '\n[2] Save links to .csv'+
+                    '\n[3] Add links to database\n'+
+                    '\nSelect options separated by space: ')
+
+        opt = [int(o) for o in opt.split()]
+        if 1 in opt: display = True
+        if 2 in opt: save = True
+        if 3 in opt: update = True    
+        
+    if save is True and file_name is None:
+        file_name = input('File name (implicit .csv): ~/presscontrol/')
+
+    if display is True:
         print()
         big_str = '\n'.join(urls[:1000])
-        os.system(f"echo '{big_str}' | more -10")
-                    
+        more = f"echo '{big_str}' | more -10"
+        os.system(more)
 
-    if save == False:
-        save = 'n'
-    if save == True:
-        save = 'y'
-    else:
-        save = input(f'Save {len(df)} links to csv file? (y/n): ')
+    if save is True:
+        save_csv(df, file_name=file_name)
+        
+    if update is True:
+        update_db(df, engine=engine, con=con, shuffle=shuffle)
 
-    if save == 'y':
-        print()
+        
+def save_csv(df, file_name=None):
+    print()
+    if file_name is None:
         file_name = input('File name (implicit .csv): ~/presscontrol/')
-        df.to_csv(f"{os.environ['HOME']}/presscontrol/{file_name}.csv", index=False, encoding='utf-8-sig', header=False)
-        print(f'Articles Saved to ~/presscontrol/{file_name}.csv')
-        print()
-        
-    if update == False:
-        update = 'n'
-    elif update == True:
-        update = 'y'
-    else:
-        update = input(f'Add {len(df)} links to database (y/n): ')
+    df.to_csv(f"{os.environ['HOME']}/presscontrol/{file_name}.csv", index=False, encoding='utf-8-sig', header=False)
+    print(f'Articles Saved to ~/presscontrol/{file_name}.csv')
+    print()
 
-    if update == 'y':
-        print()
-        df.to_sql('erase', con=con, index=False, if_exists='append', chunksize=50000)
+    
+def update_db(df, backup=None, queue=None, engine=None, con=None, shuffle=False):
+    if backup is None: backup = config['TABLES']['BACKUP']
+    if queue is None: queue = config['TABLES']['QUEUE']
+    if engine is None and con is None: engine = mysql_engine()
+    if con is None: con = engine.connect()
 
-        engine.execute(f'insert ignore into {backup} (original_link) select original_link from erase')
-        engine.execute(f'insert ignore into {queue} (original_link) select original_link from erase')
+    print()
+    df.to_sql('erase', con=con, index=False, if_exists='append', chunksize=50000)
 
-        engine.execute('drop table if exists erase')
-        
-        print('Success.')
-        
-        shuffle_table(engine=engine)
-        
+    engine.execute(f'insert ignore into {backup} (original_link) select original_link from erase')
+    engine.execute(f'insert ignore into {queue} (original_link) select original_link from erase')
 
+    engine.execute('drop table if exists erase')
+    
+    tprint('Successfully added urls to database.')
+    
+    shuffle_table(engine=engine, shuffle=shuffle)
+
+    
 class Summary:
     def __init__(self):
         self.sum = {}
@@ -216,7 +215,6 @@ class Summary:
                 for month in self.sum[user][year].keys():
                     l.append(month+': '+str(self.sum[user][year][month])+' links')
                 center_xcols(l, width=60, ncols=3)
-                print()
                 
     def dump_csv(self):
         filename = f"{os.environ['HOME']}/presscontrol/twitter_scrape_1.csv"

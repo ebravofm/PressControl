@@ -1,13 +1,15 @@
 from crontab import CronTab
+import os
 
-cron  = CronTab(user=True)
-
-for job in cron:
-    print(job)
+def daily_scrape_twitter(usernames):
+    path = f"{os.environ['HOME']}/presscontrol/cron-tasks/"
+    if not os.path.exists(path):
+         os.makedirs(path)
+    cron  = CronTab(user=True)
     
-    
-job = cron.new(command = "python3 -c 'print(\"hola\")' >> ~/caca.txt")
+    for username in usernames:
+        cmd = f"/usr/local/bin/presscontrol --scrape -username {username} -days 2 --update >> {path+username}.log 2>&1"
+        job = cron.new(command = cmd)
+        job.setall('0 0 * * *')
 
-job.minute.every(1)
-
-cron.write()
+    cron.write()

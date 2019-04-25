@@ -118,6 +118,7 @@ def column_as_set(query, con=None):
         
     return query_set
 
+
 def insert_set(iterable, table, column, engine=None, con=None):
 
     if engine == None and con == None:
@@ -137,8 +138,6 @@ def insert_set(iterable, table, column, engine=None, con=None):
               chunksize=50000)
     engine.execute(f'insert ignore into {table} ({column}) select {column} from erase')
     engine.execute('drop table erase')
-    
-
 
         
 def recover_discarded(con=None, table=None):
@@ -215,12 +214,17 @@ def get_press_rows(n=1, engine=None, con=None,
     return rows
 
 
-def shuffle_table(table=None, engine=None):
+def shuffle_table(table=None, engine=None, shuffle=''):
     if table is None:
         table = config['TABLES']['QUEUE']
         
     print()
-    x = input(f'Shuffle {table}? Recomended to prevent IP being banned (y/n): ')
+    if shuffle is True:
+        x = 'y'
+    elif shuffle is False:
+        x = 'n'
+    else:
+        x = input(f'Shuffle {table}? Recomended to prevent IP being banned (y/n): ')
     print()
     
     if x == 'y':

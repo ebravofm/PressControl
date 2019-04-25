@@ -11,9 +11,27 @@ import textwrap
 import os
 
 
-def cli(work=False):
+def cli(work=False, scrape=False, display='', save='', update='', file_name=None, print_sum='', dump_sum='', interactive=False, username='', since='', until='', years=0, months=0, days=0, shuffle=False):
+    
     if work == True:
         program(delete=True)
+        
+    elif scrape==True:
+        if username == '': raise
+        scrape_twitter(display=display,
+                       save=save,
+                       update=update,
+                       file_name=file_name,
+                       print_sum=print_sum,
+                       dump_sum=dump_sum,
+                       interactive=interactive,
+                       username=username,
+                       since=since,
+                       until=until,
+                       years=years,
+                       months=years,
+                       days=days,
+                       shuffle=shuffle)
     else:
         try:
             Home()
@@ -30,6 +48,7 @@ def Home():
         ['Get Articles', get_article],
         ['Work', work_UI],
         ['Twitter', twitter],
+        ['Tasks', tasks],
         ['Manage Database', manage_db],
         ['Configuration', configuration]]    
     UI(title=title, options=options, home=True)
@@ -133,74 +152,85 @@ def twitter():
     UI(title=title, options=options, home=False)
 
     
-def scrape_twitter():
+def scrape_twitter(display='', save='', update='', file_name=None, 
+                   print_sum='', dump_sum='', interactive=True, 
+                   username='', since='', until='', years=0, 
+                   months=0, days=0, shuffle=False):
+    
     check = True
-    tasks = []
     summary = Summary()
     counter = 1
     
-    while check:
-        try:
-            os.system('clear')
-            print(f' Task {counter} '.center(30, '+'))
-            print('\nCtrl+C to begin scraping.')
-            counter += 1
-            
-            username = input('\nUsername: ')
-            date = input('\n[1] Set date range'+
-                         '\n[2] Days/months/years old\n'+
-                         '\n>>> ')
-            print()
-            since = ''
-            until = ''
-            years = 0
-            months = 0
-            days = 0
+    if interactive is True:
+        tasks = []
+        while check:
+            try:
+                os.system('clear')
+                print(f' Task {counter} '.center(30, '+'))
+                print('\nCtrl+C to begin scraping.')
+                counter += 1
 
-            if date == '1':
-                since = input('Since (YYYY-MM-DD): ')
-                until = input('Until (YYYY-MM-DD): ')
-                
-            elif date == '2':
-                try:
-                    years = int(input('Years: '))
-                except: pass
-                try: 
-                    months = int(input('Months: '))
-                except: pass
-                try:
-                    days = int(input('Days: '))
-                except: pass
-            
-            tasks += [{'username': username,
-                       'since': since,
-                       'until': until,
-                       'years': years,
-                       'months': months,
-                       'days': days}]
+                username = input('\nUsername: ')
+                date = input('\n[1] Set date range'+
+                             '\n[2] Days/months/years old\n'+
+                             '\n>>> ')
+                print()
 
-            os.system('clear')
+                if date == '1':
+                    since = input('Since (YYYY-MM-DD): ')
+                    until = input('Until (YYYY-MM-DD): ')
+
+                elif date == '2':
+                    try:
+                        years = int(input('Years: '))
+                    except: pass
+                    try: 
+                        months = int(input('Months: '))
+                    except: pass
+                    try:
+                        days = int(input('Days: '))
+                    except: pass
+
+                tasks += [{'username': username,
+                           'since': since,
+                           'until': until,
+                           'years': years,
+                           'months': months,
+                           'days': days}]
+
+                os.system('clear')
+
+            except KeyboardInterrupt:
+                os.system('clear')
+                print(f'Number of tasks: {len(tasks)}')
+                check = False
+            
+    else:
+        tasks = [{'username': username,
+                  'since': since,
+                  'until': until,
+                  'years': years,
+                  'months': months,
+                  'days': days}]
         
-        except KeyboardInterrupt:
-            os.system('clear')
-            print(f'Number of tasks: {len(tasks)}')
-            print()
-            check = False
-            b = input('Begin Scraping (y/n): ')
-            print()
-            
-    
-    if len(tasks) > 1:
+    if len(tasks) > 0:
         urls = []
-        opt = input('\n[1] Display Links '+
-                     '\n[2] Save links to .csv'+
-                     '\n[3] Add links to database\n'+
-                     '\n>>> ')
-        opts = {'1': False, '2': False, '3': False}
-        opts[opt] = True
-        
-        for task in tasks:
+        if display=='' and save=='' and update=='':
+            opt = input('\n[1] Display Links '+
+                        '\n[2] Save links to .csv'+
+                        '\n[3] Add links to database\n'+
+                        '\nSelect options separated by space: ')
 
+            opt = [int(o) for o in opt.split()]
+            if 1 in opt: display = True
+            if 2 in opt: save = True
+            if 3 in opt: update = True    
+                
+        if save is True and file_name is None:
+            file_name = input('File name (implicit .csv): ~/presscontrol/')
+
+        for task in tasks:
+            print()
             print((f" Tweets: {task['username']} ").center(62, '+'))
             print()
 
@@ -211,38 +241,46 @@ def scrape_twitter():
                              since=task['since'], 
                              until=task['until'])
             urls += url
-            summary.add_dict(user=task['username'], d=summary_.sum)
+            summary.add_dict(user=task['username'],
+                             d=summary_.sum)
 
-        links2db(urls, display=opts['1'], save=opts['2'], update=opts['3'])
+        links2db(urls, display=display, save=save, update=update, file_name=file_name, shuffle=shuffle)
     
-    else:
-        for task in tasks:
-
-            print((f" Tweets: {task['username']} ").center(62, '+'))
-            print()
-
-            url, summary_ = tweet2url(user=task['username'], 
-                             days=task['days'], 
-                             months=task['months'], 
-                             years=task['years'], 
-                             since=task['since'], 
-                             until=task['until'])
-            summary.add_dict(user=task['username'], d=summary_.sum)
-        links2db(url)
-    
-    if input('Print Summary? (y/n): ') == 'y':
+    if print_sum == '':
+        print_sum = input('Print Summary? (y/n): ')
+    if print_sum=='y' or print_sum is True:
         summary.print()
-    summary.dump_csv()
-    input('(ENTER)')
+        
+    if dump_sum == '':
+        print()
+        dump_sum = input('Dump Summary? (y/n): ')
+    if dump_sum=='y' or dump_sum is True:
+        summary.dump_csv()
+        
+    if interactive is True:
+        input('(ENTER)')
 
-    Home()
+        Home()
 
     
-def shuffle():
+def shuffle_fn():
     shuffle_table(engine=None)
     input('(ENTER)')
     Home()
     
+
+# =======================
+#        TASKS
+# =======================
+
+def tasks():
+    title='Tasks'
+    options = [
+        ['Show PressControl Tasks', TBA],
+        ['Program Twitter Scraping', TBA]]
+    
+    UI(title=title, options=options, home=False)
+
 
 # =======================
 #    MANAGE DATABASE
@@ -251,7 +289,7 @@ def shuffle():
 def manage_db():
     title='Manage Database'
     options = [
-        ['Shuffle Queue', shuffle]]    
+        ['Shuffle Queue', shuffle_fn]]    
     UI(title=title, options=options, home=False)
     
 
