@@ -5,13 +5,17 @@ from presscontrol.utils import add_cookies, center_xcols
 from presscontrol.scrape import tweet2url, links2db, Summary
 from presscontrol.full import program
 from presscontrol.config import config
+from presscontrol.cron import show_pc_tasks, daily_scrape_twitter
 from functools import partial
 import inspect
 import textwrap
 import os
 
 
-def cli(work=False, scrape=False, display='', save='', update='', file_name=None, print_sum='', dump_sum='', interactive=False, username='', since='', until='', years=0, months=0, days=0, shuffle=False):
+def cli(work=False, scrape=False, display='', save='', update='', 
+        file_name=None, print_sum='', dump_sum='', interactive=False, 
+        username='', since='', until='', years=0, months=0, days=0,
+        shuffle=False):
     
     if work == True:
         program(delete=True)
@@ -276,10 +280,33 @@ def shuffle_fn():
 def tasks():
     title='Tasks'
     options = [
-        ['Show PressControl Tasks', TBA],
-        ['Program Twitter Scraping', TBA]]
+        ['Show PressControl Tasks', show_pc_tasks_],
+        ['Program Twitter Scraping', program_tw_task]]
     
     UI(title=title, options=options, home=False)
+
+def show_pc_tasks_():
+    title='PressControl Tasks'
+    options = []
+    
+    tasks = show_pc_tasks()
+    
+    if len(tasks)>0:
+        description = ''
+        for n, task in enumerate(tasks):
+            description += f'({n}) {task}\n'
+    else:
+        description = 'No tasks'
+        
+    UI(title=title, description=description, options=options, home=False)
+    
+def program_tw_task():
+    print()
+    usernames = input('Enter Usernames separated by space.\n>>> ').split()
+    daily_scrape_twitter(usernames)
+    
+    input('(ENTER)')
+    Home()
 
 
 # =======================
