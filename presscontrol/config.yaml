@@ -1,9 +1,9 @@
 MYSQL:
-    HOST: 104.248.179.135
+    HOST: null
     PORT: 3306
-    USER: python
-    PASSWD: prensa2018
-    DB: test
+    USER: null
+    PASSWD: null
+    DB: null
     
 TABLES:
     QUEUE: queue

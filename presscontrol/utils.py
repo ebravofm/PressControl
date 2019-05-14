@@ -1,5 +1,7 @@
+from sqlalchemy.exc import DatabaseError
 from presscontrol.config import config
 from sqlalchemy import create_engine
+from ruamel import yaml
 import pandas as pd
 import datetime
 import shutil
@@ -19,6 +21,23 @@ def mysql_engine():
 
     return engine
 
+
+def test_connection():
+    host = config['MYSQL']['HOST']
+    port = config['MYSQL']['PORT']
+    user = config['MYSQL']['USER']
+    passwd = config['MYSQL']['PASSWD']
+    db = config['MYSQL']['DB']
+
+    connector = f'mysql+mysqlconnector://{user}:{passwd}@{host}:{port}/{db}?charset=utf8mb4'
+    engine = create_engine(connector, echo=False, connect_args={'connect_timeout': 2})
+    try:
+        engine.connect()
+        check = True
+    except DatabaseError:
+        check = False
+        
+    return check
 
 def tprint(*args, important=True):
 
@@ -113,7 +132,8 @@ def add_cookies(file_path=None):
         print('File Not Found')
         print()
         input('(ENTER)')
-    
+
+
 def create_home_dir():
     path = f"{os.environ['HOME']}/presscontrol/"
     if not os.path.exists(path):

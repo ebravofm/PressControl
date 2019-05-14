@@ -1,15 +1,22 @@
 #!/usr/bin/python3
+import os
+os.system('clear')
 
-from presscontrol.db_utils import get_press_rows, shuffle_table
-from presscontrol.utils import add_cookies, center_xcols
-from presscontrol.scrape import tweet2url, links2db, Summary
-from presscontrol.full import program
-from presscontrol.config import config
+import presscontrol.check_config
+from presscontrol.utils import add_cookies, center_xcols, test_connection
+
+if test_connection() == False:
+    print('\n\nConnection Issue. Check Mysql Data (option [6]).')
+    input('(ENTER)')
+
 from presscontrol.cron import show_pc_tasks, daily_scrape_twitter
+from presscontrol.db_utils import get_press_rows, shuffle_table
+from presscontrol.scrape import tweet2url, links2db, Summary
+from presscontrol.config import config
+from presscontrol.full import program
 from functools import partial
 import inspect
 import textwrap
-import os
 
 
 def cli(work=False, scrape=False, display='', save='', update='', 
@@ -327,10 +334,17 @@ def manage_db():
 def configuration():
     title='Configuration'
     options = [
+        ['Mysql Configuration', mysql_config],
         ['Allowed domains', TBA],
         ['Add Cookies', add_cookie]]    
     UI(title=title, options=options, home=False)
     
+
+def mysql_config():
+    os.system('clear')
+    presscontrol.check_config.update_mysql_config()
+    input('\n(ENTER)')
+    Home()
 
 def add_cookie():
     add_cookies()
