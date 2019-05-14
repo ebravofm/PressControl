@@ -23,13 +23,13 @@ def work(result_table=None,
         df = pd.DataFrame()
         
     if result_table == None:
-        result_table = config['DATABASE']['RESULT']
+        result_table = config['TABLES']['RESULT']
     if queue_table == None:
-        queue_table = config['DATABASE']['QUEUE']
+        queue_table = config['TABLES']['QUEUE']
     if processed_table == None:
-        processed_table = config['DATABASE']['PROCESSED']
+        processed_table = config['TABLES']['PROCESSED']
     if error_table == None:
-        error_table = config['DATABASE']['ERROR']
+        error_table = config['TABLES']['ERROR']
 
     s = time.time()
     
@@ -92,13 +92,13 @@ class TempTable:
         if df is None:
             df = pd.DataFrame()
         if result_table == None:
-            result_table = config['DATABASE']['RESULT']
+            result_table = config['TABLES']['RESULT']
         if queue_table == None:
-            queue_table = config['DATABASE']['QUEUE']
+            queue_table = config['TABLES']['QUEUE']
         if processed_table == None:
-            processed_table = config['DATABASE']['PROCESSED']
+            processed_table = config['TABLES']['PROCESSED']
         if error_table == None:
-            error_table = config['DATABASE']['ERROR']
+            error_table = config['TABLES']['ERROR']
 
         self.result_table = result_table
         self.queue_table = queue_table

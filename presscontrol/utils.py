@@ -32,10 +32,13 @@ def test_connection():
     connector = f'mysql+mysqlconnector://{user}:{passwd}@{host}:{port}/{db}?charset=utf8mb4'
     engine = create_engine(connector, echo=False, connect_args={'connect_timeout': 2})
     try:
-        engine.connect()
+        con = engine.connect()
         check = True
+        con.close()
     except DatabaseError:
         check = False
+        
+    engine.dispose()
         
     return check
 
