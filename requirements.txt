@@ -6,3 +6,4 @@ google
 pyquery
 mysql-connector-python
 python-crontab
+ruamel.yaml
