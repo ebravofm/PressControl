@@ -141,15 +141,15 @@ class TempTable:
     def update_nodebug(self):
                     
             
+        #try:
+        self.press.to_sql(self.result_table, con = self.con, if_exists='append', index=False)
         try:
-            self.press.to_sql(self.result_table, con = self.con, if_exists='append', index=False)
-            try:
-                self.error.to_sql(self.error_table, con = self.con, if_exists='append', index=False)
+            self.error.to_sql(self.error_table, con = self.con, if_exists='append', index=False)
 
-            except Exception as exc:
-                tprint('[-] Error updating error TempTable - ', exc)    
-                
         except Exception as exc:
+            tprint('[-] Error updating error TempTable - ', exc)    
+                
+        '''except Exception as exc:
             error = f'[-] Error updating {self.result_table} table TempTable - '+str(exc)
             tprint(error[:300])
             try:
@@ -157,7 +157,7 @@ class TempTable:
                 save['info'] = save['info'].fillna(error[:255])
                 save[['original_link', 'borrar', 'info']].to_sql(self.error_table, con = self.con, if_exists='append', index=False)
             except Exception as exc:
-                tprint('[-] Error trying to save extracted rows TempTable - ', exc)
+                tprint('[-] Error trying to save extracted rows TempTable - ', exc)'''
 
 
     def update_debug(self):
