@@ -163,17 +163,17 @@ class TempTable:
     def update_debug(self):
         # Pendiente arreglar (borrar, info, columnas de menos)
             
-        #try:
-        self.create()
-        self.insert_table()
-        
         try:
-            self.error.to_sql(self.error_table, con = self.con, if_exists='append', index=False)
+            self.create()
+            self.insert_table()
+            
+            try:
+                self.error.to_sql(self.error_table, con = self.con, if_exists='append', index=False)
 
-        except Exception as exc:
-            tprint('[-] Error updating error TempTable - ', exc)    
+            except Exception as exc:
+                tprint('[-] Error updating error TempTable - ', exc)    
                 
-        '''except Exception as exc:
+        except Exception as exc:
             error = f'[-] Error updating {self.result_table} table TempTable - '+str(exc)
             tprint(error[:300])
             try:
@@ -181,7 +181,7 @@ class TempTable:
                 save['info'] = save['info'].fillna(error[:255])
                 save[['original_link', 'borrar', 'info']].to_sql(self.error_table, con = self.con, if_exists='append', index=False)
             except Exception as exc:
-                tprint('[-] Error trying to save extracted rows TempTable - ', exc)'''
+                tprint('[-] Error trying to save extracted rows TempTable - ', exc)
             
         self.destroy()
 
