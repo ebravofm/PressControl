@@ -37,7 +37,7 @@ def init_mysql_db(engine=None):
       description text,
       body text,
       authors varchar(300) DEFAULT NULL,
-      date varchar(120) DEFAULT NULL,
+      date datetime DEFAULT NULL,
       section varchar(120) DEFAULT NULL,
       original_link varchar(300) DEFAULT NULL,
       source varchar(120) DEFAULT NULL,
@@ -51,10 +51,12 @@ def init_mysql_db(engine=None):
 
     error_query = f'''
     CREATE TABLE IF NOT EXISTS {error} (
+        id int(11) NOT NULL AUTO_INCREMENT,
         original_link VARCHAR(300),
         info VARCHAR(300),
-        borrar tinyint(1) DEFAULT 0
-    ) CHARSET=utf8mb4; '''
+        borrar tinyint(1) DEFAULT 0,
+        PRIMARY KEY (id)
+    ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4'''
     
     engine.execute(processed_query)
     engine.execute(queue_query)

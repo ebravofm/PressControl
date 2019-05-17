@@ -99,6 +99,10 @@ def process_inner(requests_page):
         d['year'] = art.date_publish.year
     except: 
         pass
+    try:
+        d['date'] = d['date'].replace(tzinfo=None)
+    except:
+        pass
     
     
     return d
