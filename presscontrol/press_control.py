@@ -3,6 +3,8 @@ import os
 os.system('clear')
 
 import presscontrol.check_config
+from presscontrol.check_config import update_config, update_debug
+
 from presscontrol.utils import add_cookies, center_xcols, test_connection
 
 if test_connection() == False:
@@ -334,29 +336,34 @@ def manage_db():
 def configuration():
     title='Configuration'
     options = [
-        ['Mysql Configuration', mysql_config],
+        ['Mysql Configuration', partial(update_config_, ['MYSQL'])],
         ['Allowed domains', TBA],
         ['Add Cookies', add_cookie],
-        ['Review all Configurations', all_config]]    
+        ['Debug', toggle_debug],
+        ['Review all Configurations', update_config_]]    
     UI(title=title, options=options, home=False)
-    
 
-def mysql_config():
+
+def update_config_(titles):
     os.system('clear')
-    presscontrol.check_config.update_config(['MYSQL'])
-    input('\n(ENTER)')
-    Home()
-                   
-def all_config():
-    os.system('clear')
-    presscontrol.check_config.update_config()
+    update_config(titles)
     input('\n(ENTER)')
     Home()
 
 def add_cookie():
     add_cookies()
     Home()
-    
+                   
+                   
+def toggle_debug():
+    title = 'Toogle Debug'
+    description= 'Debug is '+ ('ON' if config['CONFIG']['DEBUG'] == True else 'OFF')
+    options = [
+        ['Turn on Debug', partial(update_debug, True)],
+        ['Turn off Debug', partial(update_debug, False)]]    
+    UI(title=title, description=description, options=options, home=False)
+    Home()
+
     
 # Pending
 def allowed_domains():
