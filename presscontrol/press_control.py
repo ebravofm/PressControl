@@ -336,13 +336,20 @@ def configuration():
     options = [
         ['Mysql Configuration', mysql_config],
         ['Allowed domains', TBA],
-        ['Add Cookies', add_cookie]]    
+        ['Add Cookies', add_cookie],
+        ['Review all Configurations', all_config]]    
     UI(title=title, options=options, home=False)
     
 
 def mysql_config():
     os.system('clear')
-    presscontrol.check_config.update_mysql_config()
+    presscontrol.check_config.update_config(['MYSQL'])
+    input('\n(ENTER)')
+    Home()
+                   
+def all_config():
+    os.system('clear')
+    presscontrol.check_config.update_config()
     input('\n(ENTER)')
     Home()
 

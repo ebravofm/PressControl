@@ -1,0 +1,20 @@
+MYSQL:
+  HOST: 111.1.1
+  PORT: 3306
+  USER: python
+  PASSWD: prensa2018
+  DB: press
+
+TABLES:
+  QUEUE: queue
+  PROCESSED: processed
+  RESULT: press
+  ERROR: error
+  BACKUP: all_links
+
+SOURCES:
+- hola
+- que
+- tal
+CONFIG:
+  DEBUG: true
