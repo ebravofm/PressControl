@@ -162,7 +162,8 @@ def recover_discarded(con=None, table=None):
     df.to_sql(table,
               con = con,
               if_exists='append',
-              index=False)
+              index=False,
+              chunksize=50000)
 
     
     if close == True:

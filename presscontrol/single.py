@@ -151,7 +151,8 @@ class TempTable:
                 
         except Exception as exc:
             error = f'[-] Error updating {self.result_table} table TempTable - '+str(exc)
-            tprint(error[:300])
+            error = error[:275]
+            tprint(error)
             try:
                 save = self.df
                 save['info'] = save['info'].fillna(error[:255])
@@ -175,7 +176,8 @@ class TempTable:
                 
         except Exception as exc:
             error = f'[-] Error updating {self.result_table} table TempTable - '+str(exc)
-            tprint(error[:300])
+            error = error[:275]
+            tprint(error)
             try:
                 save = self.df
                 save['info'] = save['info'].fillna(error[:255])

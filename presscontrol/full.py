@@ -32,15 +32,24 @@ def program(result_table=None,
     
     
     # Initialiazing...
-    
+    if engine == None:
+        engine = mysql_engine()
+        con = engine.connect()
+    if con == None:
+        con = engine.connect()
+
     print()
     tprint('[·] Initializing...')
     status = 'working'
-    init_mysql_db()
-    recover_discarded()
+    init_mysql_db(engine=engine)
+    recover_discarded(con=con)
     queue = len_tables('queue')['queue']
     tprint('[+] Done.')
     print()
+    
+    con.close()
+    engine.dispose()
+
     
     
     i = 1

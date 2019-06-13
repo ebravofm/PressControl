@@ -10,8 +10,13 @@ def main():
     parser.add_argument("--scrape", 
                         help="Scrape twitter page", 
                         dest='scrape', 
-                        action='store_true')
-    
+                        action='store_true')    
+    parser.add_argument("--user-scrape",
+                        help="Scrape using user scraping method, specify name.",
+                        dest="user_scrape",
+                        default=False,
+                        type=str)
+
     # Arguments for twitter scraping
     parser.add_argument("--display", 
                         help="Display scraping result", 
@@ -84,6 +89,7 @@ def main():
     
     cli(work=args.work, 
         scrape=args.scrape,
+        user_scrape=args.user_scrape,
         display=args.display,
         save=args.save,
         print_sum=args.print_sum,

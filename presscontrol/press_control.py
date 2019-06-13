@@ -19,9 +19,10 @@ from presscontrol.full import program
 from functools import partial
 import inspect
 import textwrap
+import sys
 
 
-def cli(work=False, scrape=False, display='', save='', update='', 
+def cli(work=False, scrape=False, user_scrape=False, display='', save='', update='', 
         file_name=None, print_sum='', dump_sum='', interactive=False, 
         username='', since='', until='', years=0, months=0, days=0,
         shuffle=False):
@@ -45,6 +46,18 @@ def cli(work=False, scrape=False, display='', save='', update='',
                        months=years,
                        days=days,
                        shuffle=shuffle)
+
+    elif user_scrape is not False:
+        try:
+            sys.path.insert(0, f"{os.environ['HOME']}/presscontrol")
+            import user_scraping_tasks
+        except ModuleNotFoundError:
+            print('User scraping tasks not found.')
+
+        task = [task for task in inspect.getmembers(user_scraping_tasks, inspect.isfunction) if user_scrape in task[0]][0][1]
+        urls = task(interactive=False)
+        links2db(urls, update=True)
+
     else:
         try:
             Home()
@@ -290,7 +303,9 @@ def tasks():
     title='Tasks'
     options = [
         ['Show PressControl Tasks', show_pc_tasks_],
-        ['Program Twitter Scraping', program_tw_task]]
+        ['Program Twitter Scraping', program_tw_task],
+        ['User Scraping Tasks', list_user_scraping_tasks],
+        ['Program User Scraping Tasks', program_user_task]]
     
     UI(title=title, options=options, home=False)
 
@@ -317,6 +332,55 @@ def program_tw_task():
     input('(ENTER)')
     Home()
 
+                   
+def list_user_scraping_tasks(cron=True):
+    os.system('clear')
+
+    try:
+        sys.path.insert(0, f"{os.environ['HOME']}/presscontrol")
+        import user_scraping_tasks
+    except ModuleNotFoundError:
+        print('User scraping tasks not found.')
+                        
+    options = [task for task in inspect.getmembers(user_scraping_tasks, inspect.isfunction) if 'scrape' in task[0]]
+                        
+                        
+    # Print Title
+    print('='*30, sep='')
+    print('User Scraping Tasks'.center(30,' '))
+    print('='*30, '\n')
+        
+    print('In order to add scraping tasks edit "user_scraping_task.py" script in home/presscontrol folder.', '\n', sep='')
+        
+        
+    # Print Options
+    d_options = {}
+    print('Options:\n')
+    
+    for n, opt in enumerate(options):
+        n = str(n+1)
+        
+        print('[{}] '.format(n) + opt[0])
+        d_options[n] = opt
+    print()
+    
+    d_options['0'] = ['Home', Home]
+    print('[0] Home\n')
+
+    # Prompt
+    c = input('>>> ')
+    while c not in d_options.keys():
+        print(c, 'is not a valid option.\n')
+        c = input('>>> ')
+       
+    
+    # Action
+    urls = d_options[c][1]()
+    links2db(urls)
+
+    input('(ENTER)')
+    Home()
+                        
 
 # =======================
 #    MANAGE DATABASE

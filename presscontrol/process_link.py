@@ -26,7 +26,8 @@ def process_link(link):
             d = {'error': 1, 'info': 'ConnectionError'}
             
         except Exception as exc:
-            error = '[-] Error General '+link+' :' + str(exc)[:100]
+            error = '[-] Error General '+link+' :' + str(exc)
+            error = error[:275]
             tprint(error, important=False)
             d = {'error': 1, 'info': error}
             
