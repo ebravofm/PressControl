@@ -12,7 +12,7 @@ if test_connection() == False:
     input('(ENTER)')
 
 from presscontrol.cron import show_pc_tasks, daily_scrape_twitter
-from presscontrol.db_utils import get_press_rows, shuffle_table
+from presscontrol.db_utils import get_press_rows, shuffle_table, delete_error_where, reinsert_from_error_to_queue
 from presscontrol.scrape import tweet2url, links2db, Summary
 from presscontrol.config import config
 from presscontrol.full import program
@@ -389,9 +389,34 @@ def list_user_scraping_tasks(cron=True):
 def manage_db():
     title='Manage Database'
     options = [
-        ['Shuffle Queue', shuffle_fn]]    
+        ['Shuffle Queue', shuffle_fn],
+        ['Delete from Error Table', delete_error_where_], 
+        ['Reinsert from Error to Queue', reinsert_from_error_to_queue_]]  
     UI(title=title, options=options, home=False)
     
+def delete_error_where_():
+    os.system('clear')
+    
+    # Print Title
+    print('='*30, sep='')
+    print('Delete from Error Table'.center(30,' '))
+    print('='*30, '\n')
+
+    delete_error_where()
+    input('\n(ENTER)')
+    Home()
+
+def reinsert_from_error_to_queue_():
+    os.system('clear')
+    
+    # Print Title
+    print('='*30, sep='')
+    print('Reinsert from Error to Queue'.center(30,' '))
+    print('='*30, '\n')
+
+    reinsert_from_error_to_queue()
+    input('\n(ENTER)')
+    Home()
 
 # =======================
 #      CONFIGURATION

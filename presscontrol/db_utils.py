@@ -81,7 +81,114 @@ def init_mysql_db(engine=None):
 
     if close == True:
         engine.dispose()
+        
+def reinsert_from_error_to_queue(engine=None, con=None, where=''):
+    queue_table = config['TABLES']['QUEUE']
+    error_table = config['TABLES']['ERROR']
     
+    close = False
+    close_ = False
+    
+    if engine == None:
+        engine = mysql_engine()
+        con = engine.connect()
+        close = True
+
+    if con == None:
+        con = engine.connect()
+        close_ = True
+        
+    # Where clause
+    if where == '':
+        where= input('Where clause for mysql query:\n\t- ')
+        print()
+        
+    # Count and confirm
+    tprint('[·] Counting links...')
+    count = engine.execute(f'select count(*) from {error_table} where {where}').scalar()
+    y = input(f'\nAre you sure you want to reinsert {count} links? (y/n): ')
+    print()
+    
+    if y=='y':
+    
+        # Get links to be reinserted
+        tprint('[·] Getting Links...')
+        to_be_reinserted = mysql_query_as_set(f'select original_link from {error_table} where {where};', con=con)
+        
+        # Reinserting into queue
+        tprint('[·] Reinserting into queue table...')
+        insert_set(to_be_reinserted, queue_table, 'original_link', engine=engine, con=con)
+
+        # Delete from error
+        tprint('[·] Deleting from error table...')
+        engine.execute(f'delete from {error_table} where {where}')
+        
+        count_error = engine.execute(f'select count(*) from {error_table}').scalar()
+        tprint(f'[+] Done! {count_error} links left in {error_table} table')
+
+    if close == True:
+        con.close()
+        engine.dispose()
+    if close_ == True:
+        con.close()
+        
+        
+def delete_error_where(engine=None, con=None, where=''):
+    
+    processed_table = config['TABLES']['PROCESSED']
+    error_table = config['TABLES']['ERROR']
+    
+    close = False
+    close_ = False
+    
+    if engine == None:
+        engine = mysql_engine()
+        con = engine.connect()
+        close = True
+
+    if con == None:
+        con = engine.connect()
+        close_ = True
+    # Where clause
+    if where == '':
+        where= input('Where clause for mysql query:\n\t- ')
+        print()
+        
+    # Count and confirm
+    tprint('[·] Counting links...')
+    count = engine.execute(f'select count(*) from {error_table} where {where}').scalar()
+    y = input(f'\nAre you sure you want to remove {count} links? (y/n): ')
+    print()
+    
+    if y=='y':
+    
+        # Get links to be removed
+        tprint('[·] Getting Links...')
+        to_be_removed = mysql_query_as_set(f'select original_link from {error_table} where {where};', con=con)
+
+        # Filtering Processed
+        tprint('[·] Filtering processed table...')
+        processed = mysql_query_as_set(f'select original_link from {processed_table};', con=con)
+        processed = processed - to_be_removed
+        
+        # Delete from processed and error
+        tprint('[·] Deleting from processed and error table...')
+        engine.execute(f'delete from {processed_table}')
+        engine.execute(f'delete from {error_table} where {where}')
+        
+        # Reinserting into processed
+        tprint('[·] Reinserting into processed table...')
+
+        insert_set(processed, processed_table, 'original_link', engine=engine, con=con)
+        count_error = engine.execute(f'select count(*) from {error_table}').scalar()
+        tprint(f'[+] Done! {count_error} links left in {error_table} table')
+
+    if close == True:
+        con.close()
+        engine.dispose()
+    if close_ == True:
+        con.close()
+
     
 def list_discarded(con=None):
     close = False
@@ -95,9 +202,10 @@ def list_discarded(con=None):
         
     sets = {}
     for table in tables:
-        sets[table]= column_as_set(f"select original_link from {config['TABLES'][table]}")
+        sets[table]= mysql_query_as_set(f"select original_link from {config['TABLES'][table]}")
                 
     discarded = sets['PROCESSED'] - sets['RESULT'] - sets['ERROR']
+    
         
     if close == True:
         con.close()
@@ -106,7 +214,7 @@ def list_discarded(con=None):
     return list(discarded)
 
 
-def column_as_set(query, con=None):
+def mysql_query_as_set(query, con=None):
     '''Gets the first column of a MySQL query as a set'''
     
     if con == None:
