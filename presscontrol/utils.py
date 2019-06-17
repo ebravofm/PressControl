@@ -8,7 +8,7 @@ import shutil
 import os
 
 
-def mysql_engine():
+def mysql_engine(echo=False):
         
     host = config['MYSQL']['HOST']
     port = config['MYSQL']['PORT']
@@ -17,7 +17,7 @@ def mysql_engine():
     db = config['MYSQL']['DB']
 
     connector = f'mysql+mysqlconnector://{user}:{passwd}@{host}:{port}/{db}?charset=utf8mb4'
-    engine = create_engine(connector, echo=False)
+    engine = create_engine(connector, echo=echo)
 
     return engine
 

@@ -19,7 +19,8 @@ def init_mysql_db(engine=None):
 
     processed_query = f'''
     CREATE TABLE IF NOT EXISTS {processed} (
-        original_link VARCHAR(300)
+        original_link VARCHAR(300),
+        UNIQUE KEY no_duplicates (original_link)
     ) CHARSET=utf8mb4; '''
 
     queue_query = f'''
@@ -81,7 +82,8 @@ def init_mysql_db(engine=None):
 
     if close == True:
         engine.dispose()
-        
+
+
 def reinsert_from_error_to_queue(engine=None, con=None, where=''):
     queue_table = config['TABLES']['QUEUE']
     error_table = config['TABLES']['ERROR']
@@ -140,7 +142,7 @@ def delete_error_where(engine=None, con=None, where=''):
     
     close = False
     close_ = False
-    
+
     if engine == None:
         engine = mysql_engine()
         con = engine.connect()
@@ -149,6 +151,7 @@ def delete_error_where(engine=None, con=None, where=''):
     if con == None:
         con = engine.connect()
         close_ = True
+
     # Where clause
     if where == '':
         where= input('Where clause for mysql query:\n\t- ')
@@ -170,18 +173,24 @@ def delete_error_where(engine=None, con=None, where=''):
         tprint('[·] Filtering processed table...')
         processed = mysql_query_as_set(f'select original_link from {processed_table};', con=con)
         processed = processed - to_be_removed
-        
-        # Delete from processed and error
-        tprint('[·] Deleting from processed and error table...')
-        engine.execute(f'delete from {processed_table}')
-        engine.execute(f'delete from {error_table} where {where}')
-        
+
         # Reinserting into processed
         tprint('[·] Reinserting into processed table...')
+        temp = f'{processed_table}_backup_'+datetime.now().strftime('%d_%m')
+        engine.execute(f'create table {temp} like {processed_table}')
+        insert_set(processed, temp, 'original_link', engine=engine, con=con)
 
-        insert_set(processed, processed_table, 'original_link', engine=engine, con=con)
+        engine.execute(f'drop table {processed_table}')
+        engine.execute(f'rename table {temp} to {processed_table}')
+        
+        # Delete from error
+        tprint('[·] Deleting from processed and error table...')
+        engine.execute(f'delete from {error_table} where {where}')
+        
+        # Done.
         count_error = engine.execute(f'select count(*) from {error_table}').scalar()
         tprint(f'[+] Done! {count_error} links left in {error_table} table')
+        
 
     if close == True:
         con.close()
@@ -213,7 +222,6 @@ def list_discarded(con=None):
         
     return list(discarded)
 
-
 def mysql_query_as_set(query, con=None):
     '''Gets the first column of a MySQL query as a set'''
     
@@ -227,7 +235,6 @@ def mysql_query_as_set(query, con=None):
         query_set.update(d.iloc[:,0].tolist())
         
     return query_set
-
 
 def insert_set(iterable, table, column, engine=None, con=None):
 
@@ -248,8 +255,6 @@ def insert_set(iterable, table, column, engine=None, con=None):
               chunksize=50000)
     engine.execute(f'insert ignore into {table} ({column}) select {column} from erase')
     engine.execute('drop table erase')
-
-        
 def recover_discarded(con=None, table=None):
     
     if table == None:
@@ -277,8 +282,6 @@ def recover_discarded(con=None, table=None):
     if close == True:
         con.close()
         engine.dispose()
-
-        
 def get_press_rows(n=1, engine=None, con=None, 
                    result=None, 
                    ids=None, source=None):
@@ -323,8 +326,6 @@ def get_press_rows(n=1, engine=None, con=None,
 
     
     return rows
-
-
 def shuffle_table(table=None, engine=None, shuffle=''):
     if table is None:
         table = config['TABLES']['QUEUE']

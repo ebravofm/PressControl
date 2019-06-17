@@ -140,7 +140,6 @@ class TempTable:
 
     def update_nodebug(self):
                     
-            
         try:
             self.press.to_sql(self.result_table, con = self.con, if_exists='append', index=False)
             try:
