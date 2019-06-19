@@ -116,13 +116,15 @@ def get_chunk_from_db(n=150,
         
         # Backup and delete rows
         if delete == True:
-            temp_table = temp_name()
+            temp_table = temp_name(engine)
             df.to_sql(temp_table, con = con, if_exists='append', index=False)
             
             insert_query = f'INSERT  IGNORE INTO {processed_table} (original_link) SELECT original_link FROM {temp_table}'
         
             engine.execute(insert_query)
             engine.execute(f'delete from {queue_table} limit {str(n)}')
+            engine.execute(f'drop table if exists {temp_table}')        
+
         
 
     except Exception as exc:
@@ -131,18 +133,18 @@ def get_chunk_from_db(n=150,
         
     return df
 
-def get_temp_tables(self):
+def get_temp_tables(engine):
     tables = []
 
-    for t in self.engine.execute('show tables'):
+    for t in engine.execute('show tables'):
         tables += t.values()
     tables = [t for t in tables if 'temp' in t]
 
     return tables
 
 
-def temp_name(self):
-    nums = [t.replace('temp', '') for t in self.get_temp_tables()]
+def temp_name(engine):
+    nums = [t.replace('temp', '') for t in get_temp_tables(engine)]
 
     i = 1
     while str(i) in nums:

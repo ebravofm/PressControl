@@ -71,6 +71,12 @@ def program(result_table=None,
                                   engine=engine, 
                                   con=con, 
                                   rand=rand)
+            
+            if status == 'done':
+                tprint('[+] DONE!')
+                input('\n(ENTER)')
+                sys.exit()
+
         except KeyboardInterrupt:
             sys.exit()
             

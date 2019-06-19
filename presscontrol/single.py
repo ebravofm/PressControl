@@ -59,7 +59,7 @@ def work(result_table=None,
         f = time.time()
         
         tprint(f'[+] Done ({round(f-t1,2)} seconds)')
-        tprint(f'[+] {len(tt.press)}/{n} news scraped in {round(f - s,2)} seconds. ({round((f - s)/n, 2)} s/article)')
+        tprint(f'[+] {len(tt.press)}/{len(tt.df)} news scraped in {round(f - s,2)} seconds. ({round((f - s)/n, 2)} s/article)')
         status = 'working'
                
     else:
@@ -127,8 +127,9 @@ class TempTable:
                                   engine=self.engine,
                                   con=self.con,
                                   rand=rand)
-
-        self.divide_df()
+        
+        if not self.df.empty:
+            self.divide_df()
 
     def update(self):
 
