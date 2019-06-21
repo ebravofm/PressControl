@@ -2,6 +2,7 @@ from presscontrol.utils import mysql_engine, tprint
 from presscontrol.process_df import get_full_df
 from presscontrol.config import config
 import pandas as pd
+from sqlalchemy.exc import DatabaseError
 from presscontrol.utils import tprint
 import time
 
@@ -133,46 +134,37 @@ class TempTable:
 
     def update(self):
 
-        if self.debug == True:
-            self.update_debug()
-        else:
-            self.update_nodebug()
- 
-
-    def update_nodebug(self):
-                    
-        try:
-            self.press.to_sql(self.result_table, con = self.con, if_exists='append', index=False)
-            try:
-                self.error.to_sql(self.error_table, con = self.con, if_exists='append', index=False)
-
-            except Exception as exc:
-                tprint('[-] Error updating error TempTable - ', exc)    
-                
-        except Exception as exc:
-            error = f'[-] Error updating {self.result_table} table TempTable - '+str(exc)
-            error = error[:275]
-            tprint(error)
-            try:
-                save = self.df
-                save['info'] = save['info'].fillna(error[:255])
-                save[['original_link', 'borrar', 'info']].to_sql(self.error_table, con = self.con, if_exists='append', index=False)
-            except Exception as exc:
-                tprint('[-] Error trying to save extracted rows TempTable - ', exc)
-
-
-    def update_debug(self):
         # Pendiente arreglar (borrar, info, columnas de menos)
             
         try:
             self.create()
             self.insert_table()
-            
+
             try:
                 self.error.to_sql(self.error_table, con = self.con, if_exists='append', index=False)
 
             except Exception as exc:
-                tprint('[-] Error updating error TempTable - ', exc)    
+                tprint('[-] Error updating error TempTable - ', exc)   
+                
+        except DatabaseError as db_error:
+            error_msg = db_error._message()
+            
+            if 'Incorrect string value' in error_msg:
+                self.destroy()
+                
+                bad_row = int(error_msg.split()[-1]) - 1
+                poison = error_msg.split("value: '")[1].split("...' for")[0]
+                
+                tprint(f'[-] Encoding Error on col {bad_row} ({poison}). Retrying...')
+                i = self.press.reset_index()['index'][bad_row]
+                self.df['error'][i] = 1
+                self.df['info'][i] = 'Encoding Error'
+                self.divide_df()
+                
+                self.update()
+                
+            else:
+                raise Exception('Unknown DatabaseError')
                 
         except Exception as exc:
             error = f'[-] Error updating {self.result_table} table TempTable - '+str(exc)
@@ -184,7 +176,7 @@ class TempTable:
                 save[['original_link', 'borrar', 'info']].to_sql(self.error_table, con = self.con, if_exists='append', index=False)
             except Exception as exc:
                 tprint('[-] Error trying to save extracted rows TempTable - ', exc)
-            
+
         self.destroy()
 
 

@@ -207,13 +207,13 @@ def list_discarded(con=None):
         con = engine.connect()
         close = True
         
-    tables = ['PROCESSED', 'RESULT', 'ERROR']
+    tables = ['PROCESSED', 'RESULT', 'ERROR', 'QUEUE']
         
     sets = {}
     for table in tables:
         sets[table]= mysql_query_as_set(f"select original_link from {config['TABLES'][table]}")
                 
-    discarded = sets['PROCESSED'] - sets['RESULT'] - sets['ERROR']
+    discarded = sets['PROCESSED'] - sets['RESULT'] - sets['ERROR'] - sets['QUEUE']
     
         
     if close == True:
