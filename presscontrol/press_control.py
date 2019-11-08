@@ -308,6 +308,9 @@ def tasks():
         ['Program User Scraping Tasks', program_user_task]]
     
     UI(title=title, options=options, home=False)
+    
+def program_user_task():
+    pass
 
 def show_pc_tasks_():
     title='PressControl Tasks'

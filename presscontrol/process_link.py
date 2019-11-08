@@ -184,7 +184,7 @@ def process_outer(link):
     try:
         if d['title']==None or d['body']==None or d['title']=='' or d['body']=='':
             d['error'] = 1
-            d['borrar'] = 0
+            d['borrar'] = 1
             d['info'] = 'Title and content blank'
     except:
         pass

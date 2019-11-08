@@ -51,4 +51,4 @@ if None in [v for v in config['MYSQL'].values()]:
     print('='*50, sep='')
     print('INITIALIZING MYSQL CONFIG.'.center(50,' '))
     print('='*50, '\n')
-    update_mysql_config()
+    update_config()

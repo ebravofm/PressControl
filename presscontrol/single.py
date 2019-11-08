@@ -155,7 +155,7 @@ class TempTable:
                 bad_row = int(error_msg.split()[-1]) - 1
                 poison = error_msg.split("value: '")[1].split("...' for")[0]
                 
-                tprint(f'[-] Encoding Error on col {bad_row} ({poison}). Retrying...')
+                tprint(f'[-] Encoding Error on row {bad_row} ({poison}). Retrying...')
                 i = self.press.reset_index()['index'][bad_row]
                 self.df['error'][i] = 1
                 self.df['info'][i] = 'Encoding Error'

@@ -47,7 +47,7 @@ def tprint(*args, important=True):
     debug = config['CONFIG']['DEBUG']
         
     if important == True:
-        stamp = '[{:%d/%m-%H:%M}]'.format(datetime.datetime.now())
+        stamp = '[{:%d/%m %H:%M}]'.format(datetime.datetime.now())
         print(stamp, *args)
 
     elif important == False and debug:
